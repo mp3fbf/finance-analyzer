@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Finance Analyzer - Analisador Financeiro Inteligente
 
-## Getting Started
+Assistente de análise financeira que processa extratos/faturas e fornece insights contextuais via IA.
 
-First, run the development server:
+## 🚀 Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Upload de PDFs (extratos/faturas)
+- Extração inteligente via Claude Vision
+- Categorização contextual dinâmica
+- Dashboard com insights acionáveis
+- Chat integrado para análise profunda
+- 100% client-side (privacidade total)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- Dexie.js (IndexedDB)
+- Claude API (Anthropic)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📦 Setup
 
-## Learn More
+1. Clone o repo
+2. `npm install`
+3. Copie `.env.example` para `.env.local`
+4. Adicione sua `ANTHROPIC_API_KEY`
+5. `npm run dev`
 
-To learn more about Next.js, take a look at the following resources:
+## 🗂️ Estrutura
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Ver [prd.md](../prd.md) para documentação completa.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📋 Roadmap
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ver [roadmap/](../roadmap/) para etapas de implementação.
