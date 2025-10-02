@@ -35,8 +35,8 @@ export function TransactionList({ transactions }: TransactionListProps) {
     search?: string;
   }>({});
 
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((t) => {
+  const filteredAndSortedTransactions = useMemo(() => {
+    const filtered = transactions.filter((t) => {
       // Filter by type
       if (filters.type && t.type !== filters.type) return false;
 
@@ -54,19 +54,28 @@ export function TransactionList({ transactions }: TransactionListProps) {
 
       return true;
     });
+
+    // Sort by recency (most recent first)
+    return filtered.sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
   }, [transactions, filters]);
 
   const stats = useMemo(() => {
-    const total = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const expenses = filteredTransactions
-      .filter((t) => t.amount < 0)
-      .reduce((sum, t) => sum + t.amount, 0);
-    const income = filteredTransactions
-      .filter((t) => t.amount > 0)
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    return { total, expenses, income };
-  }, [filteredTransactions]);
+    // Optimize: single pass through array to calculate all stats
+    return filteredAndSortedTransactions.reduce(
+      (acc, t) => {
+        acc.total += t.amount;
+        if (t.amount < 0) {
+          acc.expenses += t.amount;
+        } else if (t.amount > 0) {
+          acc.income += t.amount;
+        }
+        return acc;
+      },
+      { total: 0, expenses: 0, income: 0 }
+    );
+  }, [filteredAndSortedTransactions]);
 
   return (
     <div className="space-y-6">
@@ -80,7 +89,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(stats.total)}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Total de transações
+              Soma de entradas e saídas
             </p>
           </CardContent>
         </Card>
@@ -135,7 +144,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
           <Card>
             <CardHeader>
               <CardTitle>
-                Transações ({filteredTransactions.length})
+                Transações ({filteredAndSortedTransactions.length})
               </CardTitle>
               <CardDescription>
                 Histórico completo de movimentações
@@ -143,12 +152,12 @@ export function TransactionList({ transactions }: TransactionListProps) {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y max-h-[600px] overflow-y-auto">
-                {filteredTransactions.length === 0 ? (
+                {filteredAndSortedTransactions.length === 0 ? (
                   <p className="p-8 text-center text-muted-foreground">
                     Nenhuma transação encontrada
                   </p>
                 ) : (
-                  filteredTransactions.map((t) => (
+                  filteredAndSortedTransactions.map((t) => (
                     <TransactionItem key={t.id} transaction={t} />
                   ))
                 )}

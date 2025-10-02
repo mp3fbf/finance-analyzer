@@ -28,16 +28,17 @@ export const TransactionItem = React.forwardRef<HTMLDivElement, TransactionItemP
   ({ transaction, onClick }, ref) => {
     const isExpense = transaction.amount < 0;
     const isIncome = transaction.amount > 0;
+    const isZero = transaction.amount === 0;
     const isInteractive = !!onClick;
 
     const getTypeIcon = () => {
       if (transaction.type === 'pix') {
-        return <ArrowLeftRight className="w-4 h-4" />;
+        return <ArrowLeftRight className="w-4 h-4" aria-hidden="true" />;
       }
       return isExpense ? (
-        <ArrowDownLeft className="w-4 h-4" />
+        <ArrowDownLeft className="w-4 h-4" aria-hidden="true" />
       ) : (
-        <ArrowUpRight className="w-4 h-4" />
+        <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
       );
     };
 
@@ -45,6 +46,12 @@ export const TransactionItem = React.forwardRef<HTMLDivElement, TransactionItemP
       if (isExpense) return 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950';
       if (isIncome) return 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950';
       return 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950';
+    };
+
+    const getAmountColor = () => {
+      if (isZero) return 'text-muted-foreground';
+      if (isExpense) return 'text-red-600 dark:text-red-400';
+      return 'text-green-600 dark:text-green-400';
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -57,16 +64,18 @@ export const TransactionItem = React.forwardRef<HTMLDivElement, TransactionItemP
     return (
       <div
         ref={ref}
-        {...(isInteractive && {
-          role: 'button',
-          tabIndex: 0,
-          onClick,
-          onKeyDown: handleKeyDown,
-        })}
+        {...(isInteractive
+          ? {
+              role: 'button',
+              tabIndex: 0,
+              onClick,
+              onKeyDown: handleKeyDown,
+            }
+          : {})}
         aria-label={`Transaction: ${transaction.description}, ${formatCurrency(Math.abs(transaction.amount))}`}
         className={cn(
-          'flex justify-between items-center p-4 transition-colors focus:outline-none focus:ring-2 focus:ring-ring rounded-lg',
-          isInteractive && 'hover:bg-accent/50 cursor-pointer'
+          'flex justify-between items-center p-4 transition-colors rounded-lg',
+          isInteractive && 'hover:bg-accent/50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring'
         )}
       >
         <div className="flex items-center gap-3 flex-1">
@@ -92,14 +101,7 @@ export const TransactionItem = React.forwardRef<HTMLDivElement, TransactionItemP
           </div>
         </div>
         <div className="text-right">
-          <p
-            className={cn(
-              'font-semibold text-lg',
-              isExpense
-                ? 'text-red-600 dark:text-red-400'
-                : 'text-green-600 dark:text-green-400'
-            )}
-          >
+          <p className={cn('font-semibold text-lg', getAmountColor())}>
             {formatCurrency(Math.abs(transaction.amount))}
           </p>
           <p className="text-xs text-muted-foreground mt-1">

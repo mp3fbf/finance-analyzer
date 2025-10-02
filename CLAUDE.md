@@ -127,7 +127,7 @@ Located in `app/globals.css`:
 
 ## Directory Structure
 
-```
+```text
 finance-analyzer/
 ├── app/                        # Next.js App Router
 │   ├── layout.tsx             # Root layout (ThemeProvider)
@@ -215,9 +215,9 @@ function MyComponent() {
 }
 ```
 
-### 3. API Routes (Server-Side)
+### 3. API Route Handlers (Server-Only Code)
 
-All Claude API calls happen in route handlers:
+All Claude API calls happen in route handlers (server-only code, not Server Components):
 
 ```ts
 // app/api/extract/route.ts
