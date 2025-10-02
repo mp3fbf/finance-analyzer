@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useState } from 'react';
 import { processMerchantsForAllTransactions } from '@/lib/analysis/process-merchants';
+import { formatCurrency, formatDate } from '@/lib/utils/formatting';
 import Link from 'next/link';
 import { CheckCircle2, XCircle, Store, Upload } from 'lucide-react';
 
@@ -18,8 +19,15 @@ export default function MerchantsPage() {
     setProcessing(true);
     setMessage(undefined);
     try {
-      await processMerchantsForAllTransactions();
-      setMessage({ type: 'success', text: 'Mapeamentos processados com sucesso!' });
+      const result = await processMerchantsForAllTransactions();
+      if (result.errors > 0) {
+        setMessage({
+          type: 'error',
+          text: `Processados ${result.processed} de ${result.total} merchants (${result.errors} erros)`
+        });
+      } else {
+        setMessage({ type: 'success', text: `${result.processed} mapeamentos processados com sucesso!` });
+      }
     } catch (error) {
       console.error('Failed to process merchants:', error);
       setMessage({
@@ -122,7 +130,7 @@ export default function MerchantsPage() {
                         </h3>
                         <p className="text-sm text-muted-foreground">
                           {m.transaction_count} {m.transaction_count === 1 ? 'transação' : 'transações'} • Última:{' '}
-                          {m.last_seen.toLocaleDateString('pt-BR')}
+                          {formatDate(m.last_seen)}
                         </p>
                         <details className="mt-3 group">
                           <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors list-none flex items-center gap-2">
@@ -138,10 +146,7 @@ export default function MerchantsPage() {
                       </div>
                       <div className="text-right flex-shrink-0">
                         <p className="text-2xl font-bold text-destructive">
-                          {new Intl.NumberFormat('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          }).format(m.total_spent)}
+                          {formatCurrency(m.total_spent)}
                         </p>
                       </div>
                     </div>

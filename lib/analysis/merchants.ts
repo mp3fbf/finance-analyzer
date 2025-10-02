@@ -1,4 +1,4 @@
-import { addMerchant, getMerchantByName, updateMerchant, addMapping, getMapping } from '@/lib/db/operations';
+import { addMerchant, getMerchant, getMerchantByName, updateMerchant, addMapping, getMapping } from '@/lib/db/operations';
 
 /**
  * Normalizes raw merchant name by removing noise and standardizing format.
@@ -55,6 +55,15 @@ export async function getOrCreateMerchant(
   // 1. Verificar se já existe mapping
   const existingMapping = await getMapping(rawDescription);
   if (existingMapping) {
+    // IMPORTANTE: Mesmo com mapping existente, precisamos atualizar os stats
+    const merchant = await getMerchant(existingMapping.merchant_id);
+    if (merchant) {
+      await updateMerchant(merchant.id, {
+        total_spent: merchant.total_spent + Math.abs(amount),
+        transaction_count: merchant.transaction_count + 1,
+        last_seen: new Date(),
+      });
+    }
     return existingMapping.merchant_id;
   }
 
