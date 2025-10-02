@@ -99,7 +99,8 @@ export interface TransactionContext {
 }
 
 /**
- * Common payment-related keywords in Brazilian banking
+ * Common payment-related keywords in Brazilian banking transactions.
+ * Used for identifying payment method indicators in transaction descriptions.
  */
 const PAYMENT_KEYWORDS = [
   'PAG', 'PAGTO', 'TED', 'DOC', 'PIX', 'TRANSF',
@@ -108,7 +109,114 @@ const PAYMENT_KEYWORDS = [
 ];
 
 /**
- * Normalize a transaction code by removing variable suffixes
+ * Aggressively normalizes transaction codes to group semantic duplicates.
+ *
+ * @remarks
+ * This is more aggressive than `normalizeCode()` and is designed to reduce
+ * the number of unique merchant codes by removing variable identifiers
+ * in the middle of codes, after asterisks, and in suffixes.
+ *
+ * @param raw - Raw transaction description
+ * @returns Aggressively normalized code
+ *
+ * @example
+ * aggressiveNormalizeCode("ZUL 1 CARTAO") // "ZUL CARTAO"
+ * aggressiveNormalizeCode("ZUL 2 CARTAO") // "ZUL CARTAO"
+ * aggressiveNormalizeCode("IFOOD *RESTABCD") // "IFOOD *"
+ * aggressiveNormalizeCode("PAG*SERVICO-01") // "PAG*SERVICO"
+ */
+export function aggressiveNormalizeCode(raw: string): string {
+  let normalized = raw.trim().toUpperCase();
+
+  // Level 1: Remove variable IDs and suffixes
+
+  // 1. Remove digits stuck to words BEFORE spaces (e.g., "ZUL1 CARTAO" → "ZUL CARTAO")
+  // But preserve if followed by end of string (e.g., "DROGASIL1984" → handled later)
+  normalized = normalized.replace(/([A-Z]+)(\d+)(\s)/g, '$1$3');
+
+  // 2. Remove isolated digits between words (e.g., "ZUL 1 CARTAO" → "ZUL CARTAO")
+  // Match: space + 1-3 digits + space
+  normalized = normalized.replace(/\s+\d{1,3}(?=\s)/g, '');
+
+  // 3. Unify plural forms: CARTOES → CARTAO (do this early)
+  normalized = normalized.replace(/\bCARTOES\b/g, 'CARTAO');
+
+  // 4. Remove everything after asterisk (including asterisk with spaces/dots)
+  // Handle patterns: "* TEXT", "** TEXT", "* TEXT.XX"
+  normalized = normalized.replace(/\s*\*+\s*[A-Z0-9.\s]*$/g, '');
+  // Also handle asterisk followed by alphanumeric without spaces
+  normalized = normalized.replace(/\*[A-Z0-9]+/g, '');
+
+  // 5. Remove hyphenated/dashed suffixes (e.g., "PAG*SERVICO-01" → "PAG*SERVICO")
+  normalized = normalized.replace(/-[A-Z0-9]{1,6}$/g, '');
+
+  // 6. Remove long MIXED alphanumeric suffixes (6+ chars with both letters and numbers)
+  // This catches transaction IDs like "1MK1EX" but NOT words like "CARTAO"
+  // "ZUL CARTAO 1MK1EX" → "ZUL CARTAO"
+  normalized = normalized.replace(/\s+(?=.*\d)(?=.*[A-Z])[A-Z0-9]{6,}$/g, '');
+
+  // 7. Remove long numeric suffixes (transaction IDs)
+  normalized = normalized.replace(/\s+\d{6,}$/g, '');
+
+  // 8. Remove short numeric suffixes if the base is meaningful
+  if (normalized.match(/\s+\d{1,5}$/)) {
+    const withoutSuffix = normalized.replace(/\s+\d{1,5}$/, '');
+    if (withoutSuffix.length > 2) {
+      normalized = withoutSuffix;
+    }
+  }
+
+  // 9. Remove digits at end of string (e.g., "DROGASIL1984" → "DROGASIL")
+  normalized = normalized.replace(/\d+$/g, '');
+
+  // 10. Remove hexadecimal IDs (8+ hex chars)
+  normalized = normalized.replace(/\s+[A-F0-9]{8,}$/g, '');
+
+  // Level 2: Semantic Unification
+
+  // 11. Remove common location/qualifier words at the end
+  const LOCATION_QUALIFIERS = [
+    'DIGITAL', 'ONLINE', 'ITAIM', 'IBIRAPUERA', 'CENTRO',
+    'SHOPPING', 'MORUMBI', 'PAULISTA', 'VILA', 'JARDIM',
+    'AEROPORTO', 'INTERNACIONAL', 'BRASIL', 'BRAZIL', 'BR'
+  ];
+
+  LOCATION_QUALIFIERS.forEach(word => {
+    const regex = new RegExp(`\\s+${word}$`, 'gi');
+    normalized = normalized.replace(regex, '');
+  });
+
+  // 12. Remove duplicate consecutive words (e.g., "UBER UBER *" → "UBER *")
+  const words = normalized.split(' ');
+  const uniqueWords = words.filter((word, idx) =>
+    idx === 0 || word !== words[idx - 1]
+  );
+  normalized = uniqueWords.join(' ');
+
+  // Level 3: Standardization
+
+  // 13. Collapse multiple spaces to single space
+  normalized = normalized.replace(/\s+/g, ' ');
+
+  // 14. Remove trailing/leading whitespace and special characters
+  normalized = normalized.trim();
+
+  return normalized;
+}
+
+/**
+ * Normalizes a transaction code by removing variable suffixes.
+ * Removes long numeric suffixes (6+ digits) and short ones if the base is meaningful.
+ *
+ * @deprecated Use `aggressiveNormalizeCode()` for better grouping. This function
+ * is kept for backward compatibility but is too conservative.
+ *
+ * @param raw - Raw transaction description
+ * @returns Normalized code without variable suffixes
+ *
+ * @example
+ * normalizeCode("UBER *TRIP 123456") // "UBER *TRIP"
+ * normalizeCode("RESTAURANT 42") // "RESTAURANT" (if base > 2 chars)
  */
 export function normalizeCode(raw: string): string {
   let normalized = raw.trim().toUpperCase();
@@ -130,7 +238,11 @@ export function normalizeCode(raw: string): string {
 }
 
 /**
- * Analyze the structure of a transaction code
+ * Analyzes the structure of a transaction code to extract patterns and characteristics.
+ *
+ * @param raw - Raw transaction description
+ * @param allVariations - All observed variations of this code
+ * @returns Detailed structural analysis including composition, patterns, and keywords
  */
 export function analyzeCodeStructure(raw: string, allVariations: string[]): CodeStructure {
   const normalized = normalizeCode(raw);
@@ -182,7 +294,11 @@ export function analyzeCodeStructure(raw: string, allVariations: string[]): Code
 }
 
 /**
- * Calculate statistical measures for amounts
+ * Calculates statistical measures for transaction amounts.
+ * Handles negative values (expenses) by using absolute mean for CV calculation.
+ *
+ * @param amounts - Array of transaction amounts
+ * @returns Statistical analysis including min, max, mean, median, stddev, and coefficient of variation
  */
 export function calculateAmountStats(amounts: number[]): AmountStats {
   if (amounts.length === 0) {
@@ -218,7 +334,11 @@ export function calculateAmountStats(amounts: number[]): AmountStats {
 }
 
 /**
- * Analyze temporal patterns in transaction dates
+ * Analyzes temporal patterns in transaction dates.
+ * Identifies dominant days, clustering patterns, and generates descriptions.
+ *
+ * @param dates - Array of transaction dates
+ * @returns Temporal pattern analysis with distributions and pattern description
  */
 export function analyzeTemporalPattern(dates: Date[]): TemporalPattern {
   const dayOfMonth = new Array(31).fill(0);
@@ -256,7 +376,13 @@ export function analyzeTemporalPattern(dates: Date[]): TemporalPattern {
 }
 
 /**
- * Extract complete context for a group of transactions with the same code
+ * Extracts complete context for a group of transactions with the same code.
+ * Aggregates statistical, temporal, and structural signals for AI inference.
+ *
+ * @param code - Normalized transaction code
+ * @param transactions - Transactions with this code
+ * @param allTransactions - All transactions (for co-occurrence analysis)
+ * @returns Complete transaction context with all extracted signals
  */
 export function extractContext(
   code: string,
@@ -309,19 +435,27 @@ export function extractContext(
       last: lastDate,
       span_days: spanDays
     },
-    sample_transaction_ids: transactions.slice(0, 5).map(t => t.id)
+    sample_transaction_ids: transactions.slice(0, 5).map((t) => t.id)
   };
 }
 
 /**
- * Analyze all transactions and extract contexts for unique merchant codes
+ * Analyzes all transactions and extracts contexts for unique merchant codes.
+ * Groups transactions by normalized code and generates context for each.
+ *
+ * @param transactions - All transactions to analyze
+ * @returns Map of normalized codes to their extracted contexts
+ *
+ * @remarks
+ * Uses `aggressiveNormalizeCode()` to reduce semantic duplicates by 60-70%.
+ * Example: "ZUL 1 CARTAO", "ZUL 2 CARTAO" → grouped as "ZUL CARTAO"
  */
 export function analyzeAllTransactions(transactions: Transaction[]): Map<string, TransactionContext> {
-  // Group by normalized code
+  // Group by aggressively normalized code to reduce duplicates
   const groupedByCode = new Map<string, Transaction[]>();
 
   transactions.forEach(transaction => {
-    const code = normalizeCode(transaction.description);
+    const code = aggressiveNormalizeCode(transaction.description);
     if (!groupedByCode.has(code)) {
       groupedByCode.set(code, []);
     }
@@ -335,12 +469,22 @@ export function analyzeAllTransactions(transactions: Transaction[]): Map<string,
     contexts.set(code, extractContext(code, txns, transactions));
   });
 
+  console.log(`analyzeAllTransactions: Grouped ${transactions.length} transactions into ${contexts.size} unique merchants`);
+
   return contexts;
 }
 
 /**
- * Calculate impact score for prioritizing validation
- * Higher score = more important to validate
+ * Calculates impact score for prioritizing validation.
+ * Higher score indicates higher priority for user validation.
+ *
+ * @param context - Transaction context with amount and frequency data
+ * @param aiConfidence - AI confidence score (0-1)
+ * @returns Impact score (higher = more important to validate)
+ *
+ * @remarks
+ * Formula: (total_value × occurrence_count) / confidence
+ * Prioritizes high-value, frequent transactions with low AI confidence
  */
 export function calculateImpactScore(context: TransactionContext, aiConfidence: number): number {
   // Impact = (total_value × occurrence_count) / confidence

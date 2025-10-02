@@ -9,7 +9,6 @@
 
 import { useState } from 'react';
 import { analyzeAllTransactions, calculateImpactScore } from '@/lib/analysis/context-analyzer';
-import { filterContextsNeedingInference } from '@/lib/ai/merchant-inference';
 import {
   getAllTransactions,
   getValidatedDiscoveries,
@@ -17,6 +16,7 @@ import {
   addMerchantDiscovery,
   getDiscoveryByCode,
 } from '@/lib/db/operations';
+import type { MerchantInference } from '@/types/inference';
 
 /**
  * Progress state for merchant discovery process
@@ -110,10 +110,16 @@ export function useDiscoverMerchants() {
 
       // 4. Filter contexts that need inference
       const contextsArray = Array.from(contexts.values());
-      const contextsNeedingInference = filterContextsNeedingInference(
-        contextsArray,
-        existingMap
-      );
+      const contextsNeedingInference = contextsArray.filter(context => {
+        const existing = existingMap.get(context.code);
+        // Need inference if:
+        // 1. No existing inference
+        // 2. Existing inference is not confirmed and has low confidence
+        if (!existing) return true;
+        if (existing.confirmed) return false;
+        if (existing.confidence < 0.7) return true;
+        return false;
+      });
 
       if (contextsNeedingInference.length === 0) {
         const result: DiscoveryResult = {
@@ -137,9 +143,9 @@ export function useDiscoverMerchants() {
         was_correct: l.was_correct
       }));
 
-      // 6. Perform batch inference via API
-      // Since AI calls must go through server, we need to send data to API
-      const response = await fetch('/api/infer-merchants', {
+      // 6. Perform batch inference via SSE streaming API
+      // This provides real-time progress updates while maintaining parallel processing
+      const response = await fetch('/api/infer-merchants-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -149,10 +155,93 @@ export function useDiscoverMerchants() {
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        const errorMessage = errorData.message || errorData.error || response.statusText;
+        throw new Error(`API error (${response.status}): ${errorMessage}`);
       }
 
-      const inferences = await response.json();
+      // Read SSE stream
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Response body is not readable');
+      }
+
+      const decoder = new TextDecoder();
+      const inferences: MerchantInference[] = [];
+      let buffer = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) break;
+
+          // Decode chunk and add to buffer
+          buffer += decoder.decode(value, { stream: true });
+
+          // Process complete events (ending with \n\n)
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+          for (const line of lines) {
+            if (!line.trim() || !line.startsWith('data: ')) continue;
+
+            try {
+              const data = JSON.parse(line.substring(6));
+
+              switch (data.type) {
+                case 'start':
+                  setProgress({
+                    stage: 'inferring',
+                    current: 0,
+                    total: data.total,
+                    message: data.message || `Iniciando inferência...`
+                  });
+                  break;
+
+                case 'progress':
+                  setProgress({
+                    stage: 'inferring',
+                    current: data.current,
+                    total: data.total,
+                    message: data.message || `${data.current}/${data.total}: ${data.code}`
+                  });
+                  break;
+
+                case 'result':
+                  if (data.inference) {
+                    inferences.push(data.inference);
+                  }
+                  setProgress({
+                    stage: 'inferring',
+                    current: data.current,
+                    total: data.total,
+                    message: data.message || `${data.current}/${data.total} concluídos`
+                  });
+                  break;
+
+                case 'complete':
+                  // Stream complete, results are in data.results
+                  if (data.results && Array.isArray(data.results)) {
+                    // Use results from complete event if available
+                    inferences.length = 0;
+                    inferences.push(...data.results);
+                  }
+                  break;
+
+                case 'error':
+                  console.error('Stream error:', data.error, data.code);
+                  // Continue processing, don't fail entire batch
+                  break;
+              }
+            } catch (parseError) {
+              console.error('Failed to parse SSE event:', line, parseError);
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
 
       // 7. Save discoveries to database
       setProgress({ stage: 'saving', current: 80, total: 100, message: 'Salvando descobertas...' });

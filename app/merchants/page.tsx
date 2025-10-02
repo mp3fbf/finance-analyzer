@@ -6,14 +6,43 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useState } from 'react';
 import { processMerchantsForAllTransactions } from '@/lib/analysis/process-merchants';
+import { useDiscoverMerchants } from '@/lib/hooks/useDiscoverMerchants';
 import { formatCurrency, formatDate } from '@/lib/utils/formatting';
 import Link from 'next/link';
-import { CheckCircle2, XCircle, Store, Upload } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { CheckCircle2, XCircle, Store, Upload, Sparkles, Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { resetDiscoveries } from '@/lib/db/operations';
 
 export default function MerchantsPage() {
   const merchants = useMerchants();
+  const router = useRouter();
   const [processing, setProcessing] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string }>();
+
+  const { discoverMerchants, progress, isDiscovering } = useDiscoverMerchants();
+
+  const handleResetDiscoveries = async () => {
+    setResetting(true);
+    setMessage(undefined);
+    try {
+      await resetDiscoveries();
+      setShowResetConfirm(false);
+      setMessage({
+        type: 'success',
+        text: 'Análises antigas removidas! Clique em "Start Discovery" para re-analisar com os novos algoritmos.'
+      });
+    } catch (error) {
+      console.error('Failed to reset discoveries:', error);
+      setMessage({
+        type: 'error',
+        text: 'Erro ao resetar: ' + (error instanceof Error ? error.message : 'Erro desconhecido')
+      });
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const handleProcess = async () => {
     setProcessing(true);
@@ -36,6 +65,36 @@ export default function MerchantsPage() {
       });
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleDiscover = async () => {
+    setMessage(undefined);
+    try {
+      const result = await discoverMerchants();
+
+      if (result.discoveries_count === 0) {
+        setMessage({
+          type: 'success',
+          text: 'Todos os estabelecimentos já foram descobertos!'
+        });
+      } else {
+        setMessage({
+          type: 'success',
+          text: `${result.discoveries_count} estabelecimentos descobertos! Redirecionando para validação...`
+        });
+
+        // Navigate to validation page after 1.5 seconds
+        setTimeout(() => {
+          router.push('/merchants/validate');
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Failed to discover merchants:', error);
+      setMessage({
+        type: 'error',
+        text: 'Erro ao descobrir: ' + (error instanceof Error ? error.message : 'Erro desconhecido')
+      });
     }
   };
 
@@ -69,7 +128,74 @@ export default function MerchantsPage() {
           </p>
         </div>
 
-        {message && (
+        {/* Discovery Progress - Enhanced with real-time updates */}
+        {isDiscovering && (
+          <Card className="mb-6 border-blue-500/50 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-950/20">
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                {/* Header with stats */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 text-blue-500 animate-spin flex-shrink-0" />
+                    <div>
+                      <p className="text-blue-600 dark:text-blue-400 font-semibold">
+                        {progress.message}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {progress.current}/{progress.total} estabelecimentos processados
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {Math.round((progress.current / Math.max(progress.total, 1)) * 100)}%
+                    </p>
+                    {progress.total > 0 && progress.current > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        ~{Math.round((progress.total - progress.current) * 0.9)}s restantes
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress bar with animation */}
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden"
+                    style={{ width: `${(progress.current / Math.max(progress.total, 1)) * 100}%` }}
+                  >
+                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                  </div>
+                </div>
+
+                {/* Stats inline */}
+                <div className="grid grid-cols-3 gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Processados</p>
+                    <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                      {progress.current}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Restantes</p>
+                    <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                      {Math.max(0, progress.total - progress.current)}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Velocidade</p>
+                    <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      ~0.9s
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Status Messages */}
+        {message && !isDiscovering && (
           <Card className={`mb-6 ${message.type === 'success' ? 'border-green-500/50' : 'border-destructive/50'}`}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -95,28 +221,74 @@ export default function MerchantsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3">
                 <Link href="/upload">
-                  <Button>
+                  <Button className="w-full">
                     <Upload className="w-4 h-4 mr-2" />
                     Fazer Upload de Fatura
                   </Button>
                 </Link>
-                <Button variant="outline" onClick={handleProcess} disabled={processing}>
-                  {processing ? 'Processando...' : 'Processar Mapeamentos'}
-                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleProcess}
+                    disabled={processing || isDiscovering}
+                    className="flex-1"
+                  >
+                    {processing ? 'Processando...' : 'Processar Mapeamentos'}
+                  </Button>
+                  <Button
+                    onClick={handleDiscover}
+                    disabled={processing || isDiscovering}
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {isDiscovering ? 'Descobrindo...' : 'Descobrir com IA'}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         ) : (
           <>
-            <div className="mb-6 flex justify-between items-center">
-              <p className="text-sm text-muted-foreground">
-                {merchants.length} {merchants.length === 1 ? 'estabelecimento encontrado' : 'estabelecimentos encontrados'}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-3">
+                <p className="text-sm text-muted-foreground">
+                  {merchants.length} {merchants.length === 1 ? 'estabelecimento encontrado' : 'estabelecimentos encontrados'}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowResetConfirm(true)}
+                    disabled={processing || isDiscovering || resetting}
+                    size="sm"
+                    className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                  >
+                    <RefreshCw className="w-3 h-3 mr-1.5" />
+                    Resetar Análises
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleProcess}
+                    disabled={processing || isDiscovering}
+                    size="sm"
+                  >
+                    {processing ? 'Processando...' : 'Reprocessar Mapeamentos'}
+                  </Button>
+                  <Button
+                    onClick={handleDiscover}
+                    disabled={processing || isDiscovering}
+                    size="sm"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1.5" />
+                    {isDiscovering ? 'Descobrindo...' : 'Descobrir com IA'}
+                  </Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Use <strong>Descobrir com IA</strong> para identificar estabelecimentos reais a partir dos códigos de transação
               </p>
-              <Button variant="outline" onClick={handleProcess} disabled={processing} size="sm">
-                {processing ? 'Processando...' : 'Reprocessar Mapeamentos'}
-              </Button>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
@@ -155,6 +327,73 @@ export default function MerchantsPage() {
               ))}
             </div>
           </>
+        )}
+
+        {/* Reset Confirmation Modal */}
+        {showResetConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-6 w-6 text-orange-600" />
+                  <CardTitle>Resetar Análises Antigas?</CardTitle>
+                </div>
+                <CardDescription>
+                  Esta ação vai remover todas as discoveries e aprendizados anteriores.
+                  As transações serão preservadas.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="bg-muted p-3 rounded-lg text-sm">
+                    <p className="font-semibold mb-2">✓ O que será removido:</p>
+                    <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                      <li>Todas as discoveries pendentes</li>
+                      <li>Histórico de learning (correções)</li>
+                    </ul>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg text-sm">
+                    <p className="font-semibold mb-2 text-blue-600 dark:text-blue-400">✓ O que será preservado:</p>
+                    <ul className="list-disc list-inside space-y-1 text-blue-600/80 dark:text-blue-400/80">
+                      <li>Todas as transações (faturas)</li>
+                      <li>Merchants já validados</li>
+                    </ul>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Após o reset, clique em <strong>&quot;Start Discovery&quot;</strong> para re-analisar
+                    com os novos algoritmos (normalização agressiva + learning + web search).
+                  </p>
+                </div>
+                <div className="flex gap-3 mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowResetConfirm(false)}
+                    className="flex-1"
+                    disabled={resetting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleResetDiscoveries}
+                    disabled={resetting}
+                    className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    {resetting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Resetando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Resetar Agora
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </main>
     </div>

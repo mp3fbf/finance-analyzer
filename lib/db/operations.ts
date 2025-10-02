@@ -418,6 +418,37 @@ export async function getLearningBySimilarCodes(codePrefix: string): Promise<Dis
   return all.filter(l => l.original_code.startsWith(codePrefix));
 }
 
+/**
+ * Clear all merchant discoveries and learning signals.
+ * Keeps transactions intact - only resets the analysis.
+ *
+ * Use this to start fresh with improved algorithms without re-uploading invoices.
+ */
+export async function resetDiscoveries(): Promise<void> {
+  try {
+    await Promise.all([
+      db.merchantDiscovery.clear(),
+      db.discoveryLearning.clear(),
+    ]);
+    console.log('✓ Discoveries and learning cleared. Transactions preserved.');
+  } catch (error) {
+    console.error('Failed to reset discoveries:', error);
+    throw new Error(
+      `Database error: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+}
+
+/**
+ * Get count of pending discoveries that need validation
+ */
+export async function getPendingDiscoveriesCount(): Promise<number> {
+  return await db.merchantDiscovery
+    .where('status')
+    .equals('pending')
+    .count();
+}
+
 // ==================== UTILITY ====================
 
 /**
