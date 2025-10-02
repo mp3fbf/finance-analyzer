@@ -40,13 +40,14 @@ export function TransactionList({ transactions }: TransactionListProps) {
       // Filter by type
       if (filters.type && t.type !== filters.type) return false;
 
-      // Filter by search (both description and raw_description)
+      // Filter by search (description, raw_description, and category)
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         const matchesDescription = t.description.toLowerCase().includes(searchLower);
         const matchesRawDescription = t.raw_description.toLowerCase().includes(searchLower);
+        const matchesCategory = t.category?.toLowerCase().includes(searchLower);
 
-        if (!matchesDescription && !matchesRawDescription) {
+        if (!matchesDescription && !matchesRawDescription && !matchesCategory) {
           return false;
         }
       }
