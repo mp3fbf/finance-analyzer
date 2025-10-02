@@ -12,15 +12,29 @@ import {
 import { Search } from 'lucide-react';
 
 interface FilterOptions {
+  /** Transaction type filter (debit, credit, or pix) */
   type?: TransactionType;
+  /** Search query string */
   search?: string;
 }
 
 interface TransactionFiltersProps {
+  /** Current filter values */
   filters: FilterOptions;
+  /** Callback fired when filters change */
   onChange: (filters: FilterOptions) => void;
 }
 
+/**
+ * TransactionFilters component provides search and type filtering for transactions.
+ * Features:
+ * - Text search with icon
+ * - Transaction type dropdown (All, Débito, Crédito, PIX)
+ * - Controlled component pattern
+ *
+ * @param filters - Current filter state
+ * @param onChange - Handler for filter updates
+ */
 export function TransactionFilters({
   filters,
   onChange,

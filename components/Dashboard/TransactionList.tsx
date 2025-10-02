@@ -15,9 +15,20 @@ import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/formatting';
 
 interface TransactionListProps {
+  /** Array of transactions to display and filter */
   transactions: Transaction[];
 }
 
+/**
+ * TransactionList component displays transactions with filtering capabilities and summary stats.
+ * Features:
+ * - Stats cards showing balance, expenses, and income
+ * - Filter sidebar for search and transaction type
+ * - Optimized search across description and raw_description fields
+ * - Responsive grid layout
+ *
+ * @param transactions - Array of all transactions to display
+ */
 export function TransactionList({ transactions }: TransactionListProps) {
   const [filters, setFilters] = useState<{
     type?: TransactionType;

@@ -8,10 +8,19 @@ import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/formatting';
 
 interface TransactionItemProps {
+  /** Transaction data to display */
   transaction: Transaction;
+  /** Optional click handler for the transaction item */
   onClick?: () => void;
 }
 
+/**
+ * TransactionItem component displays a single transaction with amount, type, date, and category.
+ * Supports keyboard navigation (Enter/Space) and includes proper ARIA labels for accessibility.
+ *
+ * @param transaction - The transaction object containing all transaction details
+ * @param onClick - Optional callback fired when the item is clicked or activated via keyboard
+ */
 export function TransactionItem({ transaction, onClick }: TransactionItemProps) {
   const isExpense = transaction.amount < 0;
   const isIncome = transaction.amount > 0;
