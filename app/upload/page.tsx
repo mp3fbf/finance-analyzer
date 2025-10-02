@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FileUploader } from '@/components/Upload/FileUploader';
 import { ProcessingStatus } from '@/components/Upload/ProcessingStatus';
 import { ProgressTimer } from '@/components/Upload/ProgressTimer';
 import { ExtractionResult } from '@/types/transaction';
 import { useRouter } from 'next/navigation';
+import { addTransactions } from '@/lib/db/operations';
 
 type Status = 'idle' | 'processing' | 'success' | 'error';
 
@@ -44,7 +45,7 @@ export default function UploadPage() {
       // Converter strings ISO de volta para Date objects
       const parsedResult: ExtractionResult = {
         ...data.data,
-        transactions: data.data.transactions.map((t: any) => ({
+        transactions: data.data.transactions.map((t: { date: string; [key: string]: unknown }) => ({
           ...t,
           date: new Date(t.date),
         })),
@@ -59,12 +60,14 @@ export default function UploadPage() {
       };
 
       setResult(parsedResult);
-      setStatus('success');
-      setMessage('Extração concluída!');
 
-      // TODO: Salvar no IndexedDB (próxima etapa)
-      // Por enquanto, apenas log
-      console.log('Transactions extracted:', data.data);
+      // Salvar no IndexedDB
+      setCurrentStep('💾 Salvando transações...');
+      setMessage('Armazenando dados localmente');
+      await addTransactions(parsedResult.transactions);
+
+      setStatus('success');
+      setMessage('Extração e salvamento concluídos!');
 
       // Redirecionar para dashboard após 2s
       setTimeout(() => {
@@ -108,7 +111,7 @@ export default function UploadPage() {
           {status === 'success' && result && (
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h3 className="font-semibold text-gray-900 mb-4">
-                Transações Extraídas
+                ✅ Transações Salvas no Banco de Dados
               </h3>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {result.transactions.slice(0, 10).map((t, i) => (

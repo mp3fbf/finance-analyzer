@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     const result = await extractTransactionsFromPDF(
       base64,
       file.name,
-      file.type as any
+      file.type as 'application/pdf' | 'image/jpeg' | 'image/png'
     );
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
