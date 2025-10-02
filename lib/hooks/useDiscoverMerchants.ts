@@ -16,19 +16,57 @@ import {
   getDiscoveryByCode,
 } from '@/lib/db/operations';
 
+/**
+ * Progress state for merchant discovery process
+ */
 export interface DiscoveryProgress {
+  /** Current stage of discovery */
   stage: 'idle' | 'analyzing' | 'inferring' | 'saving' | 'complete' | 'error';
+  /** Current progress value */
   current: number;
+  /** Total progress value */
   total: number;
+  /** Human-readable progress message */
   message: string;
 }
 
+/**
+ * Result of merchant discovery process
+ */
 export interface DiscoveryResult {
+  /** Number of new discoveries made */
   discoveries_count: number;
+  /** Total number of unique merchant codes analyzed */
   total_codes: number;
+  /** IDs of created discovery records */
   discovery_ids: number[];
 }
 
+/**
+ * React hook for merchant discovery workflow
+ *
+ * Orchestrates client-side merchant discovery:
+ * 1. Analyzes transactions from IndexedDB
+ * 2. Calls server API for AI inference
+ * 3. Saves discoveries back to IndexedDB
+ * 4. Reports progress and results
+ *
+ * @returns Discovery function, progress state, result, error, and loading flag
+ *
+ * @example
+ * ```tsx
+ * const { discoverMerchants, progress, isDiscovering } = useDiscoverMerchants();
+ *
+ * const handleDiscover = async () => {
+ *   try {
+ *     const result = await discoverMerchants();
+ *     console.log(`Discovered ${result.discoveries_count} merchants`);
+ *   } catch (error) {
+ *     console.error('Discovery failed:', error);
+ *   }
+ * };
+ * ```
+ */
 export function useDiscoverMerchants() {
   const [progress, setProgress] = useState<DiscoveryProgress>({
     stage: 'idle',
