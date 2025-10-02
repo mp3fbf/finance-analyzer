@@ -23,29 +23,25 @@ export class FinanceDB extends Dexie {
   constructor() {
     super('FinanceAnalyzerDB');
 
+    // Version 1: Initial schema
     this.version(1).stores({
-      // Transações
       transactions: 'id, date, merchant_id, category, source_file, type, amount',
-
-      // Estabelecimentos
       merchants: 'id, name, total_spent, last_seen',
-
-      // Mapeamentos (raw_name é a primary key)
       mappings: 'raw_name, merchant_id, confirmed',
-
-      // Categorias
       categories: 'id, name, total_amount, created_at',
-
-      // Insights
       insights: 'id, type, priority, period, created_at, dismissed',
-
-      // Chat
       chatSessions: 'id, created_at, updated_at',
+    });
 
-      // Merchant Discovery (AI inference)
+    // Version 2: Add merchant discovery tables
+    this.version(2).stores({
+      transactions: 'id, date, merchant_id, category, source_file, type, amount',
+      merchants: 'id, name, total_spent, last_seen',
+      mappings: 'raw_name, merchant_id, confirmed',
+      categories: 'id, name, total_amount, created_at',
+      insights: 'id, type, priority, period, created_at, dismissed',
+      chatSessions: 'id, created_at, updated_at',
       merchantDiscovery: '++id, raw_code, status, impact_score, created_at, validated_at',
-
-      // Discovery Learning (feedback loop)
       discoveryLearning: '++id, pattern_signature, created_at',
     });
 

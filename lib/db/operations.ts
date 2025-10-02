@@ -269,14 +269,16 @@ export async function addMerchantDiscovery(
 }
 
 /**
- * Get all pending merchant discoveries, sorted by impact score
+ * Get all pending merchant discoveries, sorted by impact score (descending)
  */
 export async function getPendingDiscoveries(): Promise<MerchantDiscovery[]> {
-  return db.merchantDiscovery
+  const discoveries = await db.merchantDiscovery
     .where('status')
     .equals('pending')
-    .reverse()
-    .sortBy('impact_score');
+    .toArray();
+
+  // Sort by impact_score descending (highest priority first)
+  return discoveries.sort((a, b) => b.impact_score - a.impact_score);
 }
 
 /**

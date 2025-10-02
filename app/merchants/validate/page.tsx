@@ -17,6 +17,7 @@ import {
   addDiscoveryLearning
 } from '@/lib/db/operations';
 import { createPatternSignature, createContextSummary } from '@/types/discovery';
+import { formatCurrency } from '@/lib/utils/formatting';
 
 export default function MerchantValidationPage() {
   const [discoveries, setDiscoveries] = useState<MerchantDiscovery[]>([]);
@@ -155,10 +156,10 @@ export default function MerchantValidationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-xl font-semibold mb-2">Carregando descobertas...</div>
-          <div className="text-gray-600">Analisando estabelecimentos</div>
+          <div className="text-xl font-semibold mb-2 dark:text-gray-100">Carregando descobertas...</div>
+          <div className="text-gray-600 dark:text-gray-400">Analisando estabelecimentos</div>
         </div>
       </div>
     );
@@ -166,10 +167,10 @@ export default function MerchantValidationPage() {
 
   if (discoveries.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-2xl font-semibold mb-2">✅ Tudo validado!</div>
-          <div className="text-gray-600">Não há estabelecimentos pendentes de validação</div>
+          <div className="text-2xl font-semibold mb-2 dark:text-gray-100">✅ Tudo validado!</div>
+          <div className="text-gray-600 dark:text-gray-400">Não há estabelecimentos pendentes de validação</div>
         </div>
       </div>
     );
@@ -179,34 +180,34 @@ export default function MerchantValidationPage() {
   const context = discovery.context_snapshot;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">🔍 Validação de Estabelecimentos</h1>
-          <div className="text-gray-600">
+          <h1 className="text-3xl font-bold mb-2 dark:text-gray-100">🔍 Validação de Estabelecimentos</h1>
+          <div className="text-gray-600 dark:text-gray-400">
             {currentIndex + 1} de {discoveries.length} pendentes
           </div>
-          <div className="mt-2 bg-gray-200 rounded-full h-2">
+          <div className="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all"
+              className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all"
               style={{ width: `${((currentIndex + 1) / discoveries.length) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Discovery Card */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
           {/* Code */}
           <div className="mb-6">
-            <div className="text-sm text-gray-600 mb-1">Código da transação:</div>
-            <div className="font-mono text-lg font-bold">{discovery.raw_code}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Código da transação:</div>
+            <div className="font-mono text-lg font-bold dark:text-gray-100">{discovery.raw_code}</div>
             {context.raw_variations.length > 1 && (
               <details className="mt-2">
                 <summary className="text-sm text-gray-600 cursor-pointer">
                   {context.raw_variations.length} variações detectadas
                 </summary>
-                <ul className="mt-2 text-sm font-mono text-gray-700">
+                <ul className="mt-2 text-sm font-mono text-gray-700 dark:text-gray-300">
                   {context.raw_variations.slice(0, 5).map((v, i) => (
                     <li key={i}>• {v}</li>
                   ))}
@@ -219,17 +220,17 @@ export default function MerchantValidationPage() {
           </div>
 
           {/* AI Inference */}
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm text-blue-800 font-semibold">IA inferiu:</div>
-              <div className="text-sm text-blue-700">
+              <div className="text-sm text-blue-700 dark:text-blue-300">
                 Confiança: {Math.round(discovery.ai_confidence * 100)}%
               </div>
             </div>
             <div className="text-xl font-bold text-blue-900 mb-2">
               {discovery.ai_final_inference}
             </div>
-            <div className="text-sm text-blue-800">
+            <div className="text-sm text-blue-800 dark:text-blue-300">
               {discovery.ai_reasoning_summary}
             </div>
           </div>
@@ -237,23 +238,23 @@ export default function MerchantValidationPage() {
           {/* Context Info */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
-              <div className="text-sm text-gray-600">Ocorrências</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Ocorrências</div>
               <div className="text-lg font-semibold">{context.occurrence_count} transações</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600">Valor Total</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Valor Total</div>
               <div className="text-lg font-semibold">
-                R$ {context.total_amount.toFixed(2)}
+                {formatCurrency(context.total_amount)}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-600">Faixa de valores</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Faixa de valores</div>
               <div className="text-sm">
-                R$ {context.amount_stats.min.toFixed(2)} - R$ {context.amount_stats.max.toFixed(2)}
+                {formatCurrency(context.amount_stats.min)} - {formatCurrency(context.amount_stats.max)}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-600">Padrão temporal</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Padrão temporal</div>
               <div className="text-sm">{context.temporal_pattern.pattern_description}</div>
             </div>
           </div>
@@ -265,20 +266,20 @@ export default function MerchantValidationPage() {
             </summary>
             <div className="mt-4 space-y-3 text-sm">
               <div>
-                <div className="font-semibold text-gray-700">Análise estrutural:</div>
-                <div className="text-gray-600">{discovery.ai_reasoning.structural_analysis}</div>
+                <div className="font-semibold text-gray-700 dark:text-gray-300">Análise estrutural:</div>
+                <div className="text-gray-600 dark:text-gray-400">{discovery.ai_reasoning.structural_analysis}</div>
               </div>
               <div>
-                <div className="font-semibold text-gray-700">Análise de valores:</div>
-                <div className="text-gray-600">{discovery.ai_reasoning.value_analysis}</div>
+                <div className="font-semibold text-gray-700 dark:text-gray-300">Análise de valores:</div>
+                <div className="text-gray-600 dark:text-gray-400">{discovery.ai_reasoning.value_analysis}</div>
               </div>
               <div>
-                <div className="font-semibold text-gray-700">Análise temporal:</div>
-                <div className="text-gray-600">{discovery.ai_reasoning.temporal_analysis}</div>
+                <div className="font-semibold text-gray-700 dark:text-gray-300">Análise temporal:</div>
+                <div className="text-gray-600 dark:text-gray-400">{discovery.ai_reasoning.temporal_analysis}</div>
               </div>
               {discovery.ai_reasoning.hypotheses.length > 0 && (
                 <div>
-                  <div className="font-semibold text-gray-700">Hipóteses consideradas:</div>
+                  <div className="font-semibold text-gray-700 dark:text-gray-300">Hipóteses consideradas:</div>
                   <ul className="mt-2 space-y-2">
                     {discovery.ai_reasoning.hypotheses.map((h, i) => (
                       <li key={i} className="border-l-2 border-gray-300 pl-3">
@@ -299,25 +300,25 @@ export default function MerchantValidationPage() {
           {editMode && (
             <div className="mb-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Nome correto do estabelecimento:
                 </label>
                 <input
                   type="text"
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Digite o nome correto"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Notas (opcional):
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Ex: É uma padaria local, não é uma rede"
                   rows={3}
                 />
@@ -378,8 +379,8 @@ export default function MerchantValidationPage() {
         </div>
 
         {/* Impact Score Info */}
-        <div className="text-center text-sm text-gray-600">
-          Impacto financeiro: R$ {discovery.impact_score.toFixed(0)}
+        <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+          Impacto financeiro: {formatCurrency(discovery.impact_score)}
           <span className="ml-2">(prioridade por valor total × frequência)</span>
         </div>
       </div>

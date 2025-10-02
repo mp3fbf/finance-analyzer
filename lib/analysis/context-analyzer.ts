@@ -95,7 +95,7 @@ export interface TransactionContext {
     span_days: number;
   };
   /** Sample transaction IDs for reference */
-  sample_transaction_ids: number[];
+  sample_transaction_ids: string[];
 }
 
 /**
@@ -202,7 +202,7 @@ export function calculateAmountStats(amounts: number[]): AmountStats {
     mean,
     median,
     stddev,
-    cv: mean > 0 ? stddev / mean : 0
+    cv: Math.abs(mean) > 0 ? stddev / Math.abs(mean) : 0
   };
 }
 
@@ -250,17 +250,32 @@ export function analyzeTemporalPattern(dates: Date[]): TemporalPattern {
 export function extractContext(
   code: string,
   transactions: Transaction[],
-  allCodesInDataset: Set<string>
+  allTransactions: Transaction[]
 ): TransactionContext {
   const amounts = transactions.map(t => t.amount);
   const dates = transactions.map(t => new Date(t.date));
   const rawVariations = [...new Set(transactions.map(t => t.description))];
 
-  // Find co-occurring codes (other codes that appear in same date ranges)
+  // Find co-occurring codes: other merchants that appear in the same invoices/dates
   const transactionDates = new Set(transactions.map(t => t.date));
-  const coOccurringCodes = Array.from(allCodesInDataset)
-    .filter(c => c !== code)
-    .slice(0, 10); // Limit to avoid too much data
+  const coOccurringCodesMap = new Map<string, number>();
+
+  // Count how many times each other code appears on the same dates
+  allTransactions
+    .filter(t => {
+      const normalizedCode = normalizeCode(t.description);
+      return normalizedCode !== code && transactionDates.has(t.date);
+    })
+    .forEach(t => {
+      const normalizedCode = normalizeCode(t.description);
+      coOccurringCodesMap.set(normalizedCode, (coOccurringCodesMap.get(normalizedCode) || 0) + 1);
+    });
+
+  // Get top 10 most frequently co-occurring codes
+  const coOccurringCodes = Array.from(coOccurringCodesMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([code, _]) => code);
 
   // Sort dates
   const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
@@ -304,10 +319,9 @@ export function analyzeAllTransactions(transactions: Transaction[]): Map<string,
 
   // Extract context for each code
   const contexts = new Map<string, TransactionContext>();
-  const allCodes = new Set(groupedByCode.keys());
 
   groupedByCode.forEach((txns, code) => {
-    contexts.set(code, extractContext(code, txns, allCodes));
+    contexts.set(code, extractContext(code, txns, transactions));
   });
 
   return contexts;
