@@ -29,6 +29,15 @@ export default function DebugPage() {
     setMessage('Dados exportados!');
   };
 
+  const handleResetDatabase = () => {
+    if (confirm('Isso vai DELETAR o banco e RECARREGAR a página. Continuar?')) {
+      indexedDB.deleteDatabase('FinanceAnalyzerDB');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
@@ -73,6 +82,12 @@ export default function DebugPage() {
             className="px-4 py-2 bg-danger-500 text-white rounded hover:bg-danger-600"
           >
             Limpar Todos os Dados
+          </button>
+          <button
+            onClick={handleResetDatabase}
+            className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+          >
+            🔄 Reset Database (Fix Schema)
           </button>
         </div>
 
