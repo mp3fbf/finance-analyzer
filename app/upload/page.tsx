@@ -10,10 +10,13 @@ import { addTransactions } from '@/lib/db/operations';
 
 type Status = 'idle' | 'processing' | 'success' | 'error';
 
+const DISPLAY_TRANSACTION_LIMIT = 10;
+const REDIRECT_DELAY_MS = 2000;
+
 export default function UploadPage() {
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState<string>();
-  const [result, setResult] = useState<ExtractionResult>();
+  const [result, setResult] = useState<ExtractionResult | null>(null);
   const [currentStep, setCurrentStep] = useState<string>('');
   const router = useRouter();
 
@@ -62,6 +65,13 @@ export default function UploadPage() {
       setResult(parsedResult);
 
       // Salvar no IndexedDB
+      if (parsedResult.transactions.length === 0) {
+        setStatus('error');
+        setCurrentStep('⚠️ Nenhuma transação encontrada');
+        setMessage('O arquivo foi processado mas nenhuma transação foi extraída');
+        return;
+      }
+
       try {
         setCurrentStep('💾 Salvando transações...');
         setMessage(`Armazenando ${parsedResult.transactions.length} transações localmente`);
@@ -82,10 +92,10 @@ export default function UploadPage() {
         return;
       }
 
-      // Redirecionar para dashboard após 2s
+      // Redirecionar para dashboard após delay
       setTimeout(() => {
         router.push('/');
-      }, 2000);
+      }, REDIRECT_DELAY_MS);
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'Erro desconhecido');
@@ -127,7 +137,7 @@ export default function UploadPage() {
                 ✅ Transações Salvas no Banco de Dados
               </h3>
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {result.transactions.slice(0, 10).map((t, i) => (
+                {result.transactions.slice(0, DISPLAY_TRANSACTION_LIMIT).map((t, i) => (
                   <div
                     key={i}
                     className="flex justify-between items-center p-3 bg-gray-50 rounded"
@@ -151,9 +161,9 @@ export default function UploadPage() {
                   </div>
                 ))}
               </div>
-              {result.transactions.length > 10 && (
+              {result.transactions.length > DISPLAY_TRANSACTION_LIMIT && (
                 <p className="text-sm text-gray-500 mt-4 text-center">
-                  + {result.transactions.length - 10} transações
+                  + {result.transactions.length - DISPLAY_TRANSACTION_LIMIT} transações
                 </p>
               )}
             </div>

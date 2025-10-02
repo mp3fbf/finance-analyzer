@@ -5,6 +5,10 @@ import { Category } from '@/types/category';
 import { Insight } from '@/types/insight';
 import { ChatSession } from '@/types/chat';
 
+/**
+ * IndexedDB database schema for Finance Analyzer.
+ * Uses Dexie.js wrapper for better TypeScript support and simplified API.
+ */
 export class FinanceDB extends Dexie {
   transactions!: Table<Transaction, string>;
   merchants!: Table<Merchant, string>;
@@ -35,7 +39,36 @@ export class FinanceDB extends Dexie {
       // Chat
       chatSessions: 'id, created_at, updated_at',
     });
+
+    // Handle database errors
+    this.on('blocked', () => {
+      console.warn('Database upgrade blocked - close other tabs using this app');
+    });
+
+    this.on('versionchange', () => {
+      console.warn('Database version changed in another tab - reloading');
+      db.close();
+      window.location.reload();
+    });
   }
 }
 
+// Singleton instance
 export const db = new FinanceDB();
+
+/**
+ * Checks if the database connection is open and ready.
+ * @returns true if database is open, false otherwise
+ */
+export function isDatabaseOpen(): boolean {
+  return db.isOpen();
+}
+
+/**
+ * Safely closes the database connection if open.
+ */
+export async function closeDatabaseSafely(): Promise<void> {
+  if (db.isOpen()) {
+    await db.close();
+  }
+}

@@ -12,32 +12,58 @@ export default function DebugPage() {
   const [message, setMessage] = useState<string>();
 
   const handleClearData = async () => {
-    if (confirm('Tem certeza? Isso apagará TODOS os dados.')) {
+    if (!confirm('Tem certeza? Isso apagará TODOS os dados.')) {
+      return;
+    }
+
+    try {
       await clearAllData();
-      setMessage('Dados apagados com sucesso!');
+      setMessage('✅ Dados apagados com sucesso!');
+    } catch (error) {
+      setMessage(
+        `❌ Erro ao apagar dados: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      );
+      console.error('Clear data error:', error);
     }
   };
 
   const handleExportData = async () => {
-    const data = await exportData();
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `finance-data-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url); // Free memory
-    setMessage('Dados exportados!');
+    try {
+      const data = await exportData();
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `finance-data-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url); // Free memory
+      setMessage('✅ Dados exportados com sucesso!');
+    } catch (error) {
+      setMessage(
+        `❌ Erro ao exportar dados: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      );
+      console.error('Export error:', error);
+    }
   };
 
   const handleResetDatabase = async () => {
-    if (confirm('Isso vai DELETAR o banco e RECARREGAR a página. Continuar?')) {
+    if (!confirm('Isso vai DELETAR o banco e RECARREGAR a página. Continuar?')) {
+      return;
+    }
+
+    try {
       await db.close(); // Close Dexie connection first
       indexedDB.deleteDatabase('FinanceAnalyzerDB');
+      setMessage('🔄 Banco deletado. Recarregando...');
       setTimeout(() => {
         window.location.reload();
       }, 500);
+    } catch (error) {
+      setMessage(
+        `❌ Erro ao resetar banco: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      );
+      console.error('Reset database error:', error);
     }
   };
 

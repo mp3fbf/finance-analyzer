@@ -24,17 +24,29 @@ export async function addTransaction(
  * Adds multiple transactions to the database in a single batch operation.
  * @param transactions - Array of transactions without id and created_at
  * @returns Array of generated transaction IDs
+ * @throws Error if transactions array is empty or database operation fails
  */
 export async function addTransactions(
   transactions: Omit<Transaction, 'id' | 'created_at'>[]
 ): Promise<string[]> {
-  const timestamped = transactions.map((t) => ({
-    id: uuidv4(),
-    ...t,
-    created_at: new Date(),
-  }));
-  await db.transactions.bulkAdd(timestamped);
-  return timestamped.map((t) => t.id);
+  if (!transactions || transactions.length === 0) {
+    throw new Error('Cannot add empty transactions array');
+  }
+
+  try {
+    const timestamped = transactions.map((t) => ({
+      id: uuidv4(),
+      ...t,
+      created_at: new Date(),
+    }));
+    await db.transactions.bulkAdd(timestamped);
+    return timestamped.map((t) => t.id);
+  } catch (error) {
+    console.error('Failed to add transactions:', error);
+    throw new Error(
+      `Database error: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 }
 
 export async function getTransactionsByPeriod(
@@ -245,39 +257,62 @@ export async function deleteChatSession(id: string): Promise<void> {
 /**
  * Clears all data from all tables in the database.
  * WARNING: This action is irreversible.
+ * @throws Error if database operation fails
  */
 export async function clearAllData(): Promise<void> {
-  await Promise.all([
-    db.transactions.clear(),
-    db.merchants.clear(),
-    db.mappings.clear(),
-    db.categories.clear(),
-    db.insights.clear(),
-    db.chatSessions.clear(),
-  ]);
+  try {
+    await Promise.all([
+      db.transactions.clear(),
+      db.merchants.clear(),
+      db.mappings.clear(),
+      db.categories.clear(),
+      db.insights.clear(),
+      db.chatSessions.clear(),
+    ]);
+  } catch (error) {
+    console.error('Failed to clear database:', error);
+    throw new Error(
+      `Database clear failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 }
 
 /**
  * Exports all data from the database as a consistent snapshot.
  * Uses a read transaction to ensure data consistency during export.
  * @returns Object containing all tables data
+ * @throws Error if database operation fails
  */
-export async function exportData() {
-  return await db.transaction('r', [
-    db.transactions,
-    db.merchants,
-    db.mappings,
-    db.categories,
-    db.insights,
-    db.chatSessions,
-  ], async () => {
-    return {
-      transactions: await db.transactions.toArray(),
-      merchants: await db.merchants.toArray(),
-      mappings: await db.mappings.toArray(),
-      categories: await db.categories.toArray(),
-      insights: await db.insights.toArray(),
-      chatSessions: await db.chatSessions.toArray(),
-    };
-  });
+export async function exportData(): Promise<{
+  transactions: Transaction[];
+  merchants: Merchant[];
+  mappings: MerchantMapping[];
+  categories: Category[];
+  insights: Insight[];
+  chatSessions: ChatSession[];
+}> {
+  try {
+    return await db.transaction('r', [
+      db.transactions,
+      db.merchants,
+      db.mappings,
+      db.categories,
+      db.insights,
+      db.chatSessions,
+    ], async () => {
+      return {
+        transactions: await db.transactions.toArray(),
+        merchants: await db.merchants.toArray(),
+        mappings: await db.mappings.toArray(),
+        categories: await db.categories.toArray(),
+        insights: await db.insights.toArray(),
+        chatSessions: await db.chatSessions.toArray(),
+      };
+    });
+  } catch (error) {
+    console.error('Failed to export data:', error);
+    throw new Error(
+      `Database export failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 }
