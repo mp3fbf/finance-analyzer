@@ -65,7 +65,7 @@ Regras:
               type: 'document',
               source: {
                 type: 'base64',
-                media_type: mediaType,
+                media_type: mediaType as 'application/pdf',
                 data: fileBase64,
               },
             },
@@ -90,10 +90,10 @@ Regras:
     if (error instanceof Error) {
       console.error('[Extraction] 💬 Erro:', error.message);
       if ('status' in error) {
-        console.error('[Extraction] 📡 Status HTTP:', (error as any).status);
+        console.error('[Extraction] 📡 Status HTTP:', (error as { status: unknown }).status);
       }
       if ('code' in error) {
-        console.error('[Extraction] 🔧 Código erro:', (error as any).code);
+        console.error('[Extraction] 🔧 Código erro:', (error as { code: unknown }).code);
       }
     }
 
@@ -124,7 +124,15 @@ Regras:
 
   // Transform to ExtractionResult
   const result: ExtractionResult = {
-    transactions: parsed.transactions.map((t: any) => ({
+    transactions: parsed.transactions.map((t: {
+      date: string;
+      time?: string;
+      description: string;
+      raw_description?: string;
+      amount: number;
+      type: string;
+      metadata?: unknown;
+    }) => ({
       date: new Date(t.date),
       time: t.time || undefined,
       description: t.description,

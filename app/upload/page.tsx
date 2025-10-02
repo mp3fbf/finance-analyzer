@@ -1,18 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { FileUploader } from '@/components/Upload/FileUploader';
 import { ProcessingStatus } from '@/components/Upload/ProcessingStatus';
 import { ProgressTimer } from '@/components/Upload/ProgressTimer';
 import { ExtractionResult } from '@/types/transaction';
 import { useRouter } from 'next/navigation';
+import { addTransactions } from '@/lib/db/operations';
 
 type Status = 'idle' | 'processing' | 'success' | 'error';
+
+const DISPLAY_TRANSACTION_LIMIT = 10;
+const REDIRECT_DELAY_MS = 2000;
 
 export default function UploadPage() {
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState<string>();
-  const [result, setResult] = useState<ExtractionResult>();
+  const [result, setResult] = useState<ExtractionResult | null>(null);
   const [currentStep, setCurrentStep] = useState<string>('');
   const router = useRouter();
 
@@ -39,12 +43,12 @@ export default function UploadPage() {
       }
 
       setCurrentStep('📊 Finalizando extração...');
-      const data = await response.json();
+      const data: { data: ExtractionResult } = await response.json();
 
       // Converter strings ISO de volta para Date objects
       const parsedResult: ExtractionResult = {
         ...data.data,
-        transactions: data.data.transactions.map((t: any) => ({
+        transactions: data.data.transactions.map((t) => ({
           ...t,
           date: new Date(t.date),
         })),
@@ -59,17 +63,39 @@ export default function UploadPage() {
       };
 
       setResult(parsedResult);
-      setStatus('success');
-      setMessage('Extração concluída!');
 
-      // TODO: Salvar no IndexedDB (próxima etapa)
-      // Por enquanto, apenas log
-      console.log('Transactions extracted:', data.data);
+      // Salvar no IndexedDB
+      if (parsedResult.transactions.length === 0) {
+        setStatus('error');
+        setCurrentStep('⚠️ Nenhuma transação encontrada');
+        setMessage('O arquivo foi processado mas nenhuma transação foi extraída');
+        return;
+      }
 
-      // Redirecionar para dashboard após 2s
+      try {
+        setCurrentStep('💾 Salvando transações...');
+        setMessage(`Armazenando ${parsedResult.transactions.length} transações localmente`);
+        await addTransactions(parsedResult.transactions);
+
+        setCurrentStep('✅ Concluído!');
+        setStatus('success');
+        setMessage(`${parsedResult.transactions.length} transações salvas com sucesso!`);
+      } catch (dbError) {
+        console.error('IndexedDB save error:', dbError);
+        setStatus('error');
+        setCurrentStep('❌ Erro ao salvar');
+        setMessage(
+          `Extração OK, mas falha ao salvar no banco: ${
+            dbError instanceof Error ? dbError.message : 'Erro desconhecido no IndexedDB'
+          }`
+        );
+        return;
+      }
+
+      // Redirecionar para dashboard após delay
       setTimeout(() => {
         router.push('/');
-      }, 2000);
+      }, REDIRECT_DELAY_MS);
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'Erro desconhecido');
@@ -108,10 +134,10 @@ export default function UploadPage() {
           {status === 'success' && result && (
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h3 className="font-semibold text-gray-900 mb-4">
-                Transações Extraídas
+                ✅ Transações Salvas no Banco de Dados
               </h3>
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {result.transactions.slice(0, 10).map((t, i) => (
+                {result.transactions.slice(0, DISPLAY_TRANSACTION_LIMIT).map((t, i) => (
                   <div
                     key={i}
                     className="flex justify-between items-center p-3 bg-gray-50 rounded"
@@ -135,9 +161,9 @@ export default function UploadPage() {
                   </div>
                 ))}
               </div>
-              {result.transactions.length > 10 && (
+              {result.transactions.length > DISPLAY_TRANSACTION_LIMIT && (
                 <p className="text-sm text-gray-500 mt-4 text-center">
-                  + {result.transactions.length - 10} transações
+                  + {result.transactions.length - DISPLAY_TRANSACTION_LIMIT} transações
                 </p>
               )}
             </div>
