@@ -107,7 +107,7 @@ export default function DebugPage() {
                 <div className="flex-1">
                   <p className="font-medium">{t.description}</p>
                   <p className="text-xs text-gray-500">
-                    {t.date.toLocaleDateString('pt-BR')} • {t.type}
+                    {t.date?.toLocaleDateString('pt-BR') || 'Data inválida'} • {t.type}
                   </p>
                 </div>
                 <span
