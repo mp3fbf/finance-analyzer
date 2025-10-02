@@ -29,12 +29,15 @@ const KNOWN_PREFIXES: Record<string, string> = {
 
 /**
  * Detects if raw description starts with a known merchant prefix.
+ * Case-insensitive matching to handle variations like "ifood *" or "IFOOD *".
  * @param raw - Raw merchant description
  * @returns Detected merchant name or null
  */
 export function detectMerchantPrefix(raw: string): string | null {
+  const normalizedRaw = raw.trim().toUpperCase();
+
   for (const [prefix, name] of Object.entries(KNOWN_PREFIXES)) {
-    if (raw.startsWith(prefix)) {
+    if (normalizedRaw.startsWith(prefix.toUpperCase())) {
       return name;
     }
   }
