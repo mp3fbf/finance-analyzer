@@ -40,12 +40,12 @@ export default function UploadPage() {
       }
 
       setCurrentStep('📊 Finalizando extração...');
-      const data = await response.json();
+      const data: { data: ExtractionResult } = await response.json();
 
       // Converter strings ISO de volta para Date objects
       const parsedResult: ExtractionResult = {
         ...data.data,
-        transactions: data.data.transactions.map((t: { date: string; [key: string]: unknown }) => ({
+        transactions: data.data.transactions.map((t) => ({
           ...t,
           date: new Date(t.date),
         })),
@@ -62,12 +62,22 @@ export default function UploadPage() {
       setResult(parsedResult);
 
       // Salvar no IndexedDB
-      setCurrentStep('💾 Salvando transações...');
-      setMessage('Armazenando dados localmente');
-      await addTransactions(parsedResult.transactions);
-
-      setStatus('success');
-      setMessage('Extração e salvamento concluídos!');
+      try {
+        setCurrentStep('💾 Salvando transações...');
+        setMessage('Armazenando dados localmente');
+        await addTransactions(parsedResult.transactions);
+        setStatus('success');
+        setMessage('Extração e salvamento concluídos!');
+      } catch (dbError) {
+        console.error('IndexedDB save error:', dbError);
+        setStatus('error');
+        setMessage(
+          `Extração concluída, mas falha ao salvar: ${
+            dbError instanceof Error ? dbError.message : 'Erro no banco de dados'
+          }`
+        );
+        return;
+      }
 
       // Redirecionar para dashboard após 2s
       setTimeout(() => {

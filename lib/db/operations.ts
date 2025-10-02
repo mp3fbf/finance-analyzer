@@ -78,7 +78,11 @@ export async function getMerchant(id: string): Promise<Merchant | undefined> {
 export async function getMerchantByName(
   name: string
 ): Promise<Merchant | undefined> {
-  return db.merchants.where('name').equals(name).first();
+  const normalizedName = name.toLowerCase().trim();
+  return db.merchants
+    .where('name')
+    .equalsIgnoreCase(normalizedName)
+    .first();
 }
 
 export async function getAllMerchants(): Promise<Merchant[]> {
@@ -246,13 +250,21 @@ export async function clearAllData(): Promise<void> {
 }
 
 export async function exportData() {
-  const data = {
-    transactions: await db.transactions.toArray(),
-    merchants: await db.merchants.toArray(),
-    mappings: await db.mappings.toArray(),
-    categories: await db.categories.toArray(),
-    insights: await db.insights.toArray(),
-    chatSessions: await db.chatSessions.toArray(),
-  };
-  return data;
+  return await db.transaction('r', [
+    db.transactions,
+    db.merchants,
+    db.mappings,
+    db.categories,
+    db.insights,
+    db.chatSessions,
+  ], async () => {
+    return {
+      transactions: await db.transactions.toArray(),
+      merchants: await db.merchants.toArray(),
+      mappings: await db.mappings.toArray(),
+      categories: await db.categories.toArray(),
+      insights: await db.insights.toArray(),
+      chatSessions: await db.chatSessions.toArray(),
+    };
+  });
 }

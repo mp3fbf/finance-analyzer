@@ -27,7 +27,7 @@ export class FinanceDB extends Dexie {
       mappings: 'raw_name, merchant_id, confirmed',
 
       // Categorias
-      categories: 'id, name, created_at',
+      categories: 'id, name, total_amount, created_at',
 
       // Insights
       insights: 'id, type, priority, period, created_at, dismissed',
