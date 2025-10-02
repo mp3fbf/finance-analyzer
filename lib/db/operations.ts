@@ -20,17 +20,21 @@ export async function addTransaction(
   return id;
 }
 
+/**
+ * Adds multiple transactions to the database in a single batch operation.
+ * @param transactions - Array of transactions without id and created_at
+ * @returns Array of generated transaction IDs
+ */
 export async function addTransactions(
   transactions: Omit<Transaction, 'id' | 'created_at'>[]
 ): Promise<string[]> {
-  const ids = transactions.map(() => uuidv4());
-  const timestamped = transactions.map((t, i) => ({
+  const timestamped = transactions.map((t) => ({
+    id: uuidv4(),
     ...t,
-    id: ids[i]!,
     created_at: new Date(),
   }));
   await db.transactions.bulkAdd(timestamped);
-  return ids;
+  return timestamped.map((t) => t.id);
 }
 
 export async function getTransactionsByPeriod(
@@ -238,6 +242,10 @@ export async function deleteChatSession(id: string): Promise<void> {
 
 // ==================== UTILITY ====================
 
+/**
+ * Clears all data from all tables in the database.
+ * WARNING: This action is irreversible.
+ */
 export async function clearAllData(): Promise<void> {
   await Promise.all([
     db.transactions.clear(),
@@ -249,6 +257,11 @@ export async function clearAllData(): Promise<void> {
   ]);
 }
 
+/**
+ * Exports all data from the database as a consistent snapshot.
+ * Uses a read transaction to ensure data consistency during export.
+ * @returns Object containing all tables data
+ */
 export async function exportData() {
   return await db.transaction('r', [
     db.transactions,

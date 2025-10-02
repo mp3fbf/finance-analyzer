@@ -2,6 +2,7 @@
 
 import { useTransactions, useMerchants, useCategories } from '@/lib/db/hooks';
 import { clearAllData, exportData } from '@/lib/db/operations';
+import { db } from '@/lib/db/schema';
 import { useState } from 'react';
 
 export default function DebugPage() {
@@ -26,11 +27,13 @@ export default function DebugPage() {
     a.href = url;
     a.download = `finance-data-${Date.now()}.json`;
     a.click();
+    URL.revokeObjectURL(url); // Free memory
     setMessage('Dados exportados!');
   };
 
-  const handleResetDatabase = () => {
+  const handleResetDatabase = async () => {
     if (confirm('Isso vai DELETAR o banco e RECARREGAR a página. Continuar?')) {
+      await db.close(); // Close Dexie connection first
       indexedDB.deleteDatabase('FinanceAnalyzerDB');
       setTimeout(() => {
         window.location.reload();

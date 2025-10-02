@@ -64,16 +64,19 @@ export default function UploadPage() {
       // Salvar no IndexedDB
       try {
         setCurrentStep('💾 Salvando transações...');
-        setMessage('Armazenando dados localmente');
+        setMessage(`Armazenando ${parsedResult.transactions.length} transações localmente`);
         await addTransactions(parsedResult.transactions);
+
+        setCurrentStep('✅ Concluído!');
         setStatus('success');
-        setMessage('Extração e salvamento concluídos!');
+        setMessage(`${parsedResult.transactions.length} transações salvas com sucesso!`);
       } catch (dbError) {
         console.error('IndexedDB save error:', dbError);
         setStatus('error');
+        setCurrentStep('❌ Erro ao salvar');
         setMessage(
-          `Extração concluída, mas falha ao salvar: ${
-            dbError instanceof Error ? dbError.message : 'Erro no banco de dados'
+          `Extração OK, mas falha ao salvar no banco: ${
+            dbError instanceof Error ? dbError.message : 'Erro desconhecido no IndexedDB'
           }`
         );
         return;
