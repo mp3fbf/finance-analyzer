@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import { analyzeAllTransactions, calculateImpactScore } from '@/lib/analysis/context-analyzer';
-import { inferMerchantsBatch, filterContextsNeedingInference } from '@/lib/ai/merchant-inference';
+import { filterContextsNeedingInference } from '@/lib/ai/merchant-inference';
 import {
   getAllTransactions,
   getValidatedDiscoveries,

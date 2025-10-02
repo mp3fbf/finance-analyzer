@@ -190,7 +190,7 @@ export async function inferMerchant(
 
     // Extract JSON from response
     const content = message.content[0];
-    if (content.type !== 'text') {
+    if (!content || content.type !== 'text') {
       throw new Error('Unexpected response type from Claude');
     }
 

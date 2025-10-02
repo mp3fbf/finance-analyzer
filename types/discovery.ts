@@ -6,7 +6,7 @@
  */
 
 import { TransactionContext } from '@/lib/analysis/context-analyzer';
-import { MerchantHypothesis, InferenceReasoning } from '@/lib/ai/merchant-inference';
+import { InferenceReasoning } from '@/lib/ai/merchant-inference';
 
 /**
  * Status of a merchant discovery record

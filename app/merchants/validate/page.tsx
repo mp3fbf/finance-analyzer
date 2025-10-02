@@ -36,7 +36,7 @@ export default function MerchantValidationPage() {
     try {
       const pending = await getPendingDiscoveries();
       setDiscoveries(pending);
-      if (pending.length > 0) {
+      if (pending.length > 0 && pending[0]) {
         setEditedName(pending[0].ai_final_inference);
       }
     } catch (error) {
@@ -47,7 +47,7 @@ export default function MerchantValidationPage() {
 
   async function handleConfirm() {
     const discovery = discoveries[currentIndex];
-    if (!discovery.id) return;
+    if (!discovery || !discovery.id) return;
 
     try {
       await confirmDiscovery(discovery.id);
@@ -78,7 +78,7 @@ export default function MerchantValidationPage() {
 
   async function handleCorrect() {
     const discovery = discoveries[currentIndex];
-    if (!discovery.id) return;
+    if (!discovery || !discovery.id) return;
 
     try {
       await correctDiscovery(discovery.id, editedName, notes);
@@ -110,7 +110,7 @@ export default function MerchantValidationPage() {
 
   async function handleReject() {
     const discovery = discoveries[currentIndex];
-    if (!discovery.id) return;
+    if (!discovery || !discovery.id) return;
 
     try {
       await rejectDiscovery(discovery.id, notes);
@@ -146,7 +146,10 @@ export default function MerchantValidationPage() {
     if (currentIndex < discoveries.length - 1) {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
-      setEditedName(discoveries[nextIndex].ai_final_inference);
+      const nextDiscovery = discoveries[nextIndex];
+      if (nextDiscovery) {
+        setEditedName(nextDiscovery.ai_final_inference);
+      }
     } else {
       // Reload to check if there are more pending
       loadDiscoveries();
@@ -177,6 +180,17 @@ export default function MerchantValidationPage() {
   }
 
   const discovery = discoveries[currentIndex];
+  if (!discovery) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-xl font-semibold mb-2 dark:text-gray-100">Erro ao carregar descoberta</div>
+          <div className="text-gray-600 dark:text-gray-400">Descoberta não encontrada</div>
+        </div>
+      </div>
+    );
+  }
+
   const context = discovery.context_snapshot;
 
   return (

@@ -185,20 +185,31 @@ export function analyzeCodeStructure(raw: string, allVariations: string[]): Code
  * Calculate statistical measures for amounts
  */
 export function calculateAmountStats(amounts: number[]): AmountStats {
+  if (amounts.length === 0) {
+    return {
+      min: 0,
+      max: 0,
+      mean: 0,
+      median: 0,
+      stddev: 0,
+      cv: 0
+    };
+  }
+
   const sorted = [...amounts].sort((a, b) => a - b);
   const sum = sorted.reduce((a, b) => a + b, 0);
   const mean = sum / sorted.length;
 
   const median = sorted.length % 2 === 0
-    ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
-    : sorted[Math.floor(sorted.length / 2)];
+    ? ((sorted[sorted.length / 2 - 1] ?? 0) + (sorted[sorted.length / 2] ?? 0)) / 2
+    : sorted[Math.floor(sorted.length / 2)] ?? 0;
 
   const variance = sorted.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / sorted.length;
   const stddev = Math.sqrt(variance);
 
   return {
-    min: sorted[0],
-    max: sorted[sorted.length - 1],
+    min: sorted[0] ?? 0,
+    max: sorted[sorted.length - 1] ?? 0,
     mean,
     median,
     stddev,
@@ -279,8 +290,8 @@ export function extractContext(
 
   // Sort dates
   const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
-  const firstDate = sortedDates[0];
-  const lastDate = sortedDates[sortedDates.length - 1];
+  const firstDate = sortedDates[0] ?? new Date();
+  const lastDate = sortedDates[sortedDates.length - 1] ?? new Date();
   const spanDays = Math.floor((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
 
   return {
@@ -290,7 +301,7 @@ export function extractContext(
     total_amount: amounts.reduce((a, b) => a + b, 0),
     amount_stats: calculateAmountStats(amounts),
     temporal_pattern: analyzeTemporalPattern(dates),
-    code_structure: analyzeCodeStructure(rawVariations[0], rawVariations),
+    code_structure: analyzeCodeStructure(rawVariations[0] ?? '', rawVariations),
     transaction_types: [...new Set(transactions.map(t => t.type || 'unknown'))],
     co_occurring_codes: coOccurringCodes,
     date_range: {
@@ -298,7 +309,7 @@ export function extractContext(
       last: lastDate,
       span_days: spanDays
     },
-    sample_transaction_ids: transactions.slice(0, 5).map(t => t.id!).filter(id => id !== undefined)
+    sample_transaction_ids: transactions.slice(0, 5).map(t => t.id).filter((id): id is string => id !== undefined)
   };
 }
 
