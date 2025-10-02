@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ArrowDownLeft, ArrowUpRight, Wallet } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils/formatting';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -25,13 +26,20 @@ export function TransactionList({ transactions }: TransactionListProps) {
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((t) => {
+      // Filter by type
       if (filters.type && t.type !== filters.type) return false;
-      if (
-        filters.search &&
-        !t.description.toLowerCase().includes(filters.search.toLowerCase())
-      ) {
-        return false;
+
+      // Filter by search (both description and raw_description)
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesDescription = t.description.toLowerCase().includes(searchLower);
+        const matchesRawDescription = t.raw_description.toLowerCase().includes(searchLower);
+
+        if (!matchesDescription && !matchesRawDescription) {
+          return false;
+        }
       }
+
       return true;
     });
   }, [transactions, filters]);
@@ -47,13 +55,6 @@ export function TransactionList({ transactions }: TransactionListProps) {
 
     return { total, expenses, income };
   }, [filteredTransactions]);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   return (
     <div className="space-y-6">
@@ -75,10 +76,10 @@ export function TransactionList({ transactions }: TransactionListProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Despesas</CardTitle>
-            <ArrowDownLeft className="h-4 w-4 text-red-600" />
+            <ArrowDownLeft className="h-4 w-4 text-red-600 dark:text-red-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               {formatCurrency(Math.abs(stats.expenses))}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -90,10 +91,10 @@ export function TransactionList({ transactions }: TransactionListProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receitas</CardTitle>
-            <ArrowUpRight className="h-4 w-4 text-green-600" />
+            <ArrowUpRight className="h-4 w-4 text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {formatCurrency(stats.income)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">

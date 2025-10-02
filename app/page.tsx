@@ -2,6 +2,7 @@
 
 import { useTransactions } from '@/lib/db/hooks';
 import { TransactionList } from '@/components/Dashboard/TransactionList';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import Link from 'next/link';
 import { Upload, Loader2 } from 'lucide-react';
 
@@ -54,13 +55,16 @@ export default function Home() {
           <h1 className="text-2xl font-bold text-foreground">
             Finance Analyzer
           </h1>
-          <Link
-            href="/upload"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            <Upload className="w-4 h-4" />
-            Novo Upload
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link
+              href="/upload"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+              Novo Upload
+            </Link>
+          </div>
         </div>
       </header>
 
