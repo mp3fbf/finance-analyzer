@@ -4,6 +4,7 @@ import { Merchant, MerchantMapping } from '@/types/merchant';
 import { Category } from '@/types/category';
 import { Insight } from '@/types/insight';
 import { ChatSession } from '@/types/chat';
+import { MerchantDiscovery, DiscoveryLearning } from '@/types/discovery';
 
 /**
  * IndexedDB database schema for Finance Analyzer.
@@ -16,6 +17,8 @@ export class FinanceDB extends Dexie {
   categories!: Table<Category, string>;
   insights!: Table<Insight, string>;
   chatSessions!: Table<ChatSession, string>;
+  merchantDiscovery!: Table<MerchantDiscovery, number>;
+  discoveryLearning!: Table<DiscoveryLearning, number>;
 
   constructor() {
     super('FinanceAnalyzerDB');
@@ -38,6 +41,12 @@ export class FinanceDB extends Dexie {
 
       // Chat
       chatSessions: 'id, created_at, updated_at',
+
+      // Merchant Discovery (AI inference)
+      merchantDiscovery: '++id, raw_code, status, impact_score, created_at, validated_at',
+
+      // Discovery Learning (feedback loop)
+      discoveryLearning: '++id, pattern_signature, created_at',
     });
 
     // Handle database errors

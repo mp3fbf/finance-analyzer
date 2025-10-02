@@ -5,6 +5,7 @@ import { Merchant, MerchantMapping } from '@/types/merchant';
 import { Category } from '@/types/category';
 import { Insight } from '@/types/insight';
 import { ChatSession } from '@/types/chat';
+import { MerchantDiscovery, DiscoveryLearning, DiscoveryStatus } from '@/types/discovery';
 
 // ==================== TRANSACTIONS ====================
 
@@ -252,6 +253,169 @@ export async function deleteChatSession(id: string): Promise<void> {
   await db.chatSessions.delete(id);
 }
 
+// ==================== MERCHANT DISCOVERY ====================
+
+/**
+ * Add a new merchant discovery record
+ */
+export async function addMerchantDiscovery(
+  discovery: Omit<MerchantDiscovery, 'id' | 'created_at'>
+): Promise<number> {
+  const id = await db.merchantDiscovery.add({
+    ...discovery,
+    created_at: new Date(),
+  });
+  return id;
+}
+
+/**
+ * Get all pending merchant discoveries, sorted by impact score
+ */
+export async function getPendingDiscoveries(): Promise<MerchantDiscovery[]> {
+  return db.merchantDiscovery
+    .where('status')
+    .equals('pending')
+    .reverse()
+    .sortBy('impact_score');
+}
+
+/**
+ * Get a specific merchant discovery by ID
+ */
+export async function getDiscoveryById(id: number): Promise<MerchantDiscovery | undefined> {
+  return db.merchantDiscovery.get(id);
+}
+
+/**
+ * Get discovery by raw code
+ */
+export async function getDiscoveryByCode(code: string): Promise<MerchantDiscovery | undefined> {
+  return db.merchantDiscovery.where('raw_code').equals(code).first();
+}
+
+/**
+ * Update discovery status and user feedback
+ */
+export async function updateDiscoveryStatus(
+  id: number,
+  status: DiscoveryStatus,
+  userValidatedName?: string,
+  userFeedbackNotes?: string
+): Promise<void> {
+  await db.merchantDiscovery.update(id, {
+    status,
+    user_validated_name: userValidatedName,
+    user_feedback_notes: userFeedbackNotes,
+    validated_at: new Date(),
+  });
+}
+
+/**
+ * Confirm a discovery (user agrees with AI inference)
+ */
+export async function confirmDiscovery(id: number): Promise<void> {
+  await updateDiscoveryStatus(id, 'confirmed');
+}
+
+/**
+ * Correct a discovery (user provides the right name)
+ */
+export async function correctDiscovery(
+  id: number,
+  correctedName: string,
+  notes?: string
+): Promise<void> {
+  await updateDiscoveryStatus(id, 'corrected', correctedName, notes);
+}
+
+/**
+ * Reject a discovery (cannot be determined)
+ */
+export async function rejectDiscovery(id: number, notes?: string): Promise<void> {
+  await updateDiscoveryStatus(id, 'rejected', undefined, notes);
+}
+
+/**
+ * Get all validated discoveries (confirmed or corrected)
+ */
+export async function getValidatedDiscoveries(): Promise<MerchantDiscovery[]> {
+  return db.merchantDiscovery
+    .where('status')
+    .anyOf(['confirmed', 'corrected'])
+    .toArray();
+}
+
+/**
+ * Get discovery statistics
+ */
+export async function getDiscoveryStats(): Promise<{
+  total: number;
+  pending: number;
+  confirmed: number;
+  corrected: number;
+  rejected: number;
+  accuracy: number;
+}> {
+  const all = await db.merchantDiscovery.toArray();
+  const pending = all.filter(d => d.status === 'pending').length;
+  const confirmed = all.filter(d => d.status === 'confirmed').length;
+  const corrected = all.filter(d => d.status === 'corrected').length;
+  const rejected = all.filter(d => d.status === 'rejected').length;
+  const validated = confirmed + corrected;
+  const accuracy = validated > 0 ? (confirmed / validated) * 100 : 0;
+
+  return {
+    total: all.length,
+    pending,
+    confirmed,
+    corrected,
+    rejected,
+    accuracy,
+  };
+}
+
+// ==================== DISCOVERY LEARNING ====================
+
+/**
+ * Add a learning record from user feedback
+ */
+export async function addDiscoveryLearning(
+  learning: Omit<DiscoveryLearning, 'id' | 'created_at'>
+): Promise<number> {
+  const id = await db.discoveryLearning.add({
+    ...learning,
+    created_at: new Date(),
+  });
+  return id;
+}
+
+/**
+ * Get learning history for similar patterns
+ */
+export async function getLearningByPattern(
+  patternSignature: string
+): Promise<DiscoveryLearning[]> {
+  return db.discoveryLearning
+    .where('pattern_signature')
+    .equals(patternSignature)
+    .toArray();
+}
+
+/**
+ * Get all learning records, most recent first
+ */
+export async function getAllLearning(): Promise<DiscoveryLearning[]> {
+  return db.discoveryLearning.orderBy('created_at').reverse().toArray();
+}
+
+/**
+ * Get learning records for codes with similar prefixes
+ */
+export async function getLearningBySimilarCodes(codePrefix: string): Promise<DiscoveryLearning[]> {
+  const all = await db.discoveryLearning.toArray();
+  return all.filter(l => l.original_code.startsWith(codePrefix));
+}
+
 // ==================== UTILITY ====================
 
 /**
@@ -268,6 +432,8 @@ export async function clearAllData(): Promise<void> {
       db.categories.clear(),
       db.insights.clear(),
       db.chatSessions.clear(),
+      db.merchantDiscovery.clear(),
+      db.discoveryLearning.clear(),
     ]);
   } catch (error) {
     console.error('Failed to clear database:', error);
@@ -290,6 +456,8 @@ export async function exportData(): Promise<{
   categories: Category[];
   insights: Insight[];
   chatSessions: ChatSession[];
+  merchantDiscovery: MerchantDiscovery[];
+  discoveryLearning: DiscoveryLearning[];
 }> {
   try {
     return await db.transaction('r', [
@@ -299,6 +467,8 @@ export async function exportData(): Promise<{
       db.categories,
       db.insights,
       db.chatSessions,
+      db.merchantDiscovery,
+      db.discoveryLearning,
     ], async () => {
       return {
         transactions: await db.transactions.toArray(),
@@ -307,6 +477,8 @@ export async function exportData(): Promise<{
         categories: await db.categories.toArray(),
         insights: await db.insights.toArray(),
         chatSessions: await db.chatSessions.toArray(),
+        merchantDiscovery: await db.merchantDiscovery.toArray(),
+        discoveryLearning: await db.discoveryLearning.toArray(),
       };
     });
   } catch (error) {
