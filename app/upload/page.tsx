@@ -7,6 +7,7 @@ import { ProgressTimer } from '@/components/Upload/ProgressTimer';
 import { ExtractionResult } from '@/types/transaction';
 import { useRouter } from 'next/navigation';
 import { addTransactions } from '@/lib/db/operations';
+import { processMerchantsForAllTransactions } from '@/lib/analysis/process-merchants';
 
 type Status = 'idle' | 'processing' | 'success' | 'error';
 
@@ -76,6 +77,10 @@ export default function UploadPage() {
         setCurrentStep('💾 Salvando transações...');
         setMessage(`Armazenando ${parsedResult.transactions.length} transações localmente`);
         await addTransactions(parsedResult.transactions);
+
+        setCurrentStep('🏪 Processando estabelecimentos...');
+        setMessage('Criando mapeamentos de merchants');
+        await processMerchantsForAllTransactions();
 
         setCurrentStep('✅ Concluído!');
         setStatus('success');
