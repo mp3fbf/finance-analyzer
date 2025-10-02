@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Client-side hook for merchant discovery
  *

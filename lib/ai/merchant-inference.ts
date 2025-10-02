@@ -5,12 +5,9 @@
  * from arbitrary transaction codes, without relying on hardcoded patterns.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import { anthropic } from '@/lib/ai/claude';
 import { TransactionContext } from '@/lib/analysis/context-analyzer';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+import { formatCurrency } from '@/lib/utils/formatting';
 
 /**
  * A hypothesis about what a merchant code might represent
@@ -88,10 +85,10 @@ ${context.raw_variations.map(v => `- "${v}"`).join('\n')}
 
 CONTEXTO COMPLETO:
 - Ocorrências: ${context.occurrence_count} transações
-- Valor total: R$ ${context.total_amount.toFixed(2)}
-- Faixa de valores: R$ ${context.amount_stats.min.toFixed(2)} - R$ ${context.amount_stats.max.toFixed(2)}
-- Valor médio: R$ ${context.amount_stats.mean.toFixed(2)} (mediana: R$ ${context.amount_stats.median.toFixed(2)})
-- Desvio padrão: R$ ${context.amount_stats.stddev.toFixed(2)}
+- Valor total: ${formatCurrency(context.total_amount)}
+- Faixa de valores: ${formatCurrency(context.amount_stats.min)} - ${formatCurrency(context.amount_stats.max)}
+- Valor médio: ${formatCurrency(context.amount_stats.mean)} (mediana: ${formatCurrency(context.amount_stats.median)})
+- Desvio padrão: ${formatCurrency(context.amount_stats.stddev)}
 - Coeficiente de variação: ${context.amount_stats.cv.toFixed(2)} ${context.amount_stats.cv < 0.3 ? '(valores regulares)' : context.amount_stats.cv < 0.7 ? '(valores moderadamente variáveis)' : '(valores muito variáveis)'}
 - Tipos de transação: ${context.transaction_types.join(', ')}
 - Período: ${context.date_range.first.toLocaleDateString('pt-BR')} a ${context.date_range.last.toLocaleDateString('pt-BR')} (${context.date_range.span_days} dias)
@@ -194,8 +191,9 @@ export async function inferMerchant(
       throw new Error('Unexpected response type from Claude');
     }
 
-    // Parse JSON response
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+    // Parse JSON response - use non-greedy match to get the last JSON object
+    // Claude typically puts the JSON at the end of the response
+    const jsonMatch = content.text.match(/\{[\s\S]*?\}(?=\s*$)/);
     if (!jsonMatch) {
       throw new Error('No JSON found in Claude response');
     }

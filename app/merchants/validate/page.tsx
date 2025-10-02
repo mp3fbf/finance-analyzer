@@ -18,7 +18,27 @@ import {
 } from '@/lib/db/operations';
 import { createPatternSignature, createContextSummary } from '@/types/discovery';
 import { formatCurrency } from '@/lib/utils/formatting';
+import { TransactionContext } from '@/lib/analysis/context-analyzer';
 
+/**
+ * Helper function to build context features for discovery learning
+ */
+function buildContextFeatures(context: TransactionContext) {
+  return {
+    has_asterisk: context.code_structure.has_asterisk,
+    has_numeric_suffix: context.code_structure.has_variable_numeric_suffix,
+    value_cv: context.amount_stats.cv,
+    occurrence_count: context.occurrence_count,
+    temporal_pattern: context.temporal_pattern.pattern_description
+  };
+}
+
+/**
+ * Merchant validation page component
+ *
+ * Displays pending discoveries sorted by impact score, allowing users to
+ * confirm, correct, or reject AI-inferred merchant names.
+ */
 export default function MerchantValidationPage() {
   const [discoveries, setDiscoveries] = useState<MerchantDiscovery[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,13 +81,7 @@ export default function MerchantValidationPage() {
         ai_confidence: discovery.ai_confidence,
         user_correction: null,
         was_correct: true,
-        context_features: {
-          has_asterisk: discovery.context_snapshot.code_structure.has_asterisk,
-          has_numeric_suffix: discovery.context_snapshot.code_structure.has_variable_numeric_suffix,
-          value_cv: discovery.context_snapshot.amount_stats.cv,
-          occurrence_count: discovery.context_snapshot.occurrence_count,
-          temporal_pattern: discovery.context_snapshot.temporal_pattern.pattern_description
-        }
+        context_features: buildContextFeatures(discovery.context_snapshot)
       });
 
       moveToNext();
@@ -93,13 +107,7 @@ export default function MerchantValidationPage() {
         user_correction: editedName,
         was_correct: false,
         error_type: 'partially_correct',
-        context_features: {
-          has_asterisk: discovery.context_snapshot.code_structure.has_asterisk,
-          has_numeric_suffix: discovery.context_snapshot.code_structure.has_variable_numeric_suffix,
-          value_cv: discovery.context_snapshot.amount_stats.cv,
-          occurrence_count: discovery.context_snapshot.occurrence_count,
-          temporal_pattern: discovery.context_snapshot.temporal_pattern.pattern_description
-        }
+        context_features: buildContextFeatures(discovery.context_snapshot)
       });
 
       moveToNext();
@@ -125,13 +133,7 @@ export default function MerchantValidationPage() {
         user_correction: null,
         was_correct: false,
         error_type: 'completely_wrong',
-        context_features: {
-          has_asterisk: discovery.context_snapshot.code_structure.has_asterisk,
-          has_numeric_suffix: discovery.context_snapshot.code_structure.has_variable_numeric_suffix,
-          value_cv: discovery.context_snapshot.amount_stats.cv,
-          occurrence_count: discovery.context_snapshot.occurrence_count,
-          temporal_pattern: discovery.context_snapshot.temporal_pattern.pattern_description
-        }
+        context_features: buildContextFeatures(discovery.context_snapshot)
       });
 
       moveToNext();

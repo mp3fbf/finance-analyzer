@@ -309,7 +309,7 @@ export function extractContext(
       last: lastDate,
       span_days: spanDays
     },
-    sample_transaction_ids: transactions.slice(0, 5).map(t => t.id).filter((id): id is string => id !== undefined)
+    sample_transaction_ids: transactions.slice(0, 5).map(t => t.id)
   };
 }
 
