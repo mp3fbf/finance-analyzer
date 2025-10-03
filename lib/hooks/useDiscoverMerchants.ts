@@ -246,6 +246,7 @@ export function useDiscoverMerchants() {
       // 7. Save discoveries to database
       setProgress({ stage: 'saving', current: 80, total: 100, message: 'Salvando descobertas...' });
       const discoveryIds: number[] = [];
+      let createdCount = 0;
 
       for (const inference of inferences) {
         // Check if already exists
@@ -277,15 +278,21 @@ export function useDiscoverMerchants() {
         });
 
         discoveryIds.push(discoveryId);
+        createdCount++;
       }
 
       const finalResult: DiscoveryResult = {
-        discoveries_count: inferences.length,
+        discoveries_count: createdCount,
         total_codes: contextsArray.length,
         discovery_ids: discoveryIds,
       };
 
-      setProgress({ stage: 'complete', current: 100, total: 100, message: `${inferences.length} estabelecimentos descobertos!` });
+      setProgress({
+        stage: 'complete',
+        current: 100,
+        total: 100,
+        message: `${createdCount} estabelecimentos descobertos!`
+      });
       setResult(finalResult);
       return finalResult;
 

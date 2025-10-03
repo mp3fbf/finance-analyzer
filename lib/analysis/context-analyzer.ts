@@ -329,7 +329,7 @@ export function calculateAmountStats(amounts: number[]): AmountStats {
     mean,
     median,
     stddev,
-    cv: Math.abs(mean) > 0 ? stddev / Math.abs(mean) : 0
+    cv: mean !== 0 ? stddev / Math.abs(mean) : 0
   };
 }
 
@@ -393,26 +393,26 @@ export function extractContext(
   const dates = transactions.map(t => new Date(t.date));
   const rawVariations = [...new Set(transactions.map(t => t.description))];
 
-  // Find co-occurring codes: other merchants that appear in the same invoices/dates
-  const transactionDates = new Set(transactions.map(t => t.date));
+  // Find co-occurring codes on the same calendar days (avoid Date identity pitfalls)
+  const toDayKey = (d: Date | string) => {
+    const dt = d instanceof Date ? d : new Date(d);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  };
+  const dayKeys = new Set(transactions.map(t => toDayKey(t.date)));
   const coOccurringCodesMap = new Map<string, number>();
 
-  // Count how many times each other code appears on the same dates
-  allTransactions
-    .filter(t => {
-      const normalizedCode = normalizeCode(t.description);
-      return normalizedCode !== code && transactionDates.has(t.date);
-    })
-    .forEach(t => {
-      const normalizedCode = normalizeCode(t.description);
-      coOccurringCodesMap.set(normalizedCode, (coOccurringCodesMap.get(normalizedCode) || 0) + 1);
-    });
+  for (const t of allTransactions) {
+    const normalizedCode = normalizeCode(t.description);
+    if (normalizedCode === code) continue;
+    if (!dayKeys.has(toDayKey(t.date))) continue;
+    coOccurringCodesMap.set(normalizedCode, (coOccurringCodesMap.get(normalizedCode) || 0) + 1);
+  }
 
   // Get top 10 most frequently co-occurring codes
   const coOccurringCodes = Array.from(coOccurringCodesMap.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
-    .map(([code, _]) => code);
+    .map(([code]) => code);
 
   // Sort dates
   const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
@@ -435,7 +435,7 @@ export function extractContext(
       last: lastDate,
       span_days: spanDays
     },
-    sample_transaction_ids: transactions.slice(0, 5).map((t) => t.id)
+    sample_transaction_ids: transactions.slice(0, 5).map(t => t.id)
   };
 }
 
@@ -489,7 +489,7 @@ export function analyzeAllTransactions(transactions: Transaction[]): Map<string,
 export function calculateImpactScore(context: TransactionContext, aiConfidence: number): number {
   // Impact = (total_value × occurrence_count) / confidence
   // Higher total value and frequency, lower confidence = higher priority
-  const baseImpact = context.total_amount * context.occurrence_count;
+  const baseImpact = Math.abs(context.total_amount) * context.occurrence_count;
   const confidencePenalty = aiConfidence > 0 ? (1 / aiConfidence) : 10;
 
   return baseImpact * confidencePenalty;

@@ -167,7 +167,7 @@ CONTEXTO COMPLETO:
 - Desvio padrão: ${formatCurrency(context.amount_stats.stddev)}
 - Coeficiente de variação: ${context.amount_stats.cv.toFixed(2)} ${context.amount_stats.cv < 0.3 ? '(valores regulares)' : context.amount_stats.cv < 0.7 ? '(valores moderadamente variáveis)' : '(valores muito variáveis)'}
 - Tipos de transação: ${context.transaction_types.join(', ')}
-- Período: ${context.date_range.first.toLocaleDateString('pt-BR')} a ${context.date_range.last.toLocaleDateString('pt-BR')} (${context.date_range.span_days} dias)
+- Período: ${new Date(context.date_range.first).toLocaleDateString('pt-BR')} a ${new Date(context.date_range.last).toLocaleDateString('pt-BR')} (${context.date_range.span_days} dias)
 - Padrão temporal: ${context.temporal_pattern.pattern_description}
 
 ESTRUTURA DO CÓDIGO:

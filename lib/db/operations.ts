@@ -278,6 +278,7 @@ export async function getPendingDiscoveries(): Promise<MerchantDiscovery[]> {
     .toArray();
 
   // Sort by impact_score descending (highest priority first)
+  // Note: Dexie's reverse().sortBy() doesn't work as expected, so we sort after fetch
   return discoveries.sort((a, b) => b.impact_score - a.impact_score);
 }
 
