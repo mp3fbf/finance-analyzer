@@ -4,6 +4,7 @@ import { Merchant, MerchantMapping } from '@/types/merchant';
 import { Category } from '@/types/category';
 import { Insight } from '@/types/insight';
 import { ChatSession } from '@/types/chat';
+import { MerchantDiscovery, DiscoveryLearning } from '@/types/discovery';
 
 /**
  * IndexedDB database schema for Finance Analyzer.
@@ -16,28 +17,32 @@ export class FinanceDB extends Dexie {
   categories!: Table<Category, string>;
   insights!: Table<Insight, string>;
   chatSessions!: Table<ChatSession, string>;
+  merchantDiscovery!: Table<MerchantDiscovery, number>;
+  discoveryLearning!: Table<DiscoveryLearning, number>;
 
   constructor() {
     super('FinanceAnalyzerDB');
 
+    // Version 1: Initial schema
     this.version(1).stores({
-      // Transações
       transactions: 'id, date, merchant_id, category, source_file, type, amount',
-
-      // Estabelecimentos
       merchants: 'id, name, total_spent, last_seen',
-
-      // Mapeamentos (raw_name é a primary key)
       mappings: 'raw_name, merchant_id, confirmed',
-
-      // Categorias
       categories: 'id, name, total_amount, created_at',
-
-      // Insights
       insights: 'id, type, priority, period, created_at, dismissed',
-
-      // Chat
       chatSessions: 'id, created_at, updated_at',
+    });
+
+    // Version 2: Add merchant discovery tables
+    this.version(2).stores({
+      transactions: 'id, date, merchant_id, category, source_file, type, amount',
+      merchants: 'id, name, total_spent, last_seen',
+      mappings: 'raw_name, merchant_id, confirmed',
+      categories: 'id, name, total_amount, created_at',
+      insights: 'id, type, priority, period, created_at, dismissed',
+      chatSessions: 'id, created_at, updated_at',
+      merchantDiscovery: '++id, raw_code, status, impact_score, created_at, validated_at',
+      discoveryLearning: '++id, pattern_signature, created_at',
     });
 
     // Handle database errors
