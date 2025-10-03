@@ -2,11 +2,22 @@ import { anthropic, MODELS } from './claude';
 import { Transaction } from '@/types/transaction';
 import { Merchant } from '@/types/merchant';
 
+/**
+ * AI-generated category suggestion with contextual grouping.
+ *
+ * This interface represents a behavior-based category created by analyzing
+ * transaction patterns, NOT generic categories like "food" or "transport".
+ */
 export interface CategorySuggestion {
+  /** Descriptive, specific category name (e.g., "Late Night Delivery", "Work Commute Uber") */
   name: string;
+  /** Explanation of why transactions were grouped together (context, detected pattern) */
   description: string;
+  /** Array of transaction IDs belonging to this category */
   transaction_ids: string[];
+  /** Total accumulated amount for all transactions in this category */
   total_amount: number;
+  /** Array of insights about spending patterns and impact */
   insights: string[];
 }
 
@@ -93,5 +104,30 @@ Output em JSON:
   }
 
   const parsed = JSON.parse(jsonMatch[0]);
+
+  // Validate response shape before returning
+  if (!parsed.categories || !Array.isArray(parsed.categories)) {
+    throw new Error('Invalid Claude response: missing or malformed "categories" array');
+  }
+
+  // Validate each category has required fields with correct types
+  for (const cat of parsed.categories) {
+    if (typeof cat.name !== 'string' || !cat.name.trim()) {
+      throw new Error('Invalid category: "name" must be a non-empty string');
+    }
+    if (typeof cat.description !== 'string' || !cat.description.trim()) {
+      throw new Error('Invalid category: "description" must be a non-empty string');
+    }
+    if (!Array.isArray(cat.transaction_ids)) {
+      throw new Error('Invalid category: "transaction_ids" must be an array');
+    }
+    if (typeof cat.total_amount !== 'number' || isNaN(cat.total_amount)) {
+      throw new Error('Invalid category: "total_amount" must be a valid number');
+    }
+    if (!Array.isArray(cat.insights)) {
+      throw new Error('Invalid category: "insights" must be an array');
+    }
+  }
+
   return parsed.categories;
 }

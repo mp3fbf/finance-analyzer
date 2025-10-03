@@ -2,6 +2,7 @@
 
 import { useCategories } from '@/lib/db/hooks';
 import { Card } from '@/components/ui/card';
+import { formatCurrency } from '@/lib/utils/formatting';
 import { useState } from 'react';
 
 /**
@@ -39,7 +40,7 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-8 dark:bg-gray-900">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-3xl font-bold">Categorias Inteligentes</h1>
@@ -53,15 +54,15 @@ export default function CategoriesPage() {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-800">
+          <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-200">
             <p className="font-semibold">Erro:</p>
             <p>{error}</p>
           </div>
         )}
 
         {!categories || categories.length === 0 ? (
-          <div className="rounded-lg bg-white p-8 text-center">
-            <p className="text-gray-600">
+          <div className="rounded-lg bg-white p-8 text-center dark:bg-gray-800">
+            <p className="text-gray-600 dark:text-gray-300">
               Nenhuma categoria gerada ainda. Clique em &quot;Gerar
               Categorias&quot; para começar.
             </p>
@@ -73,17 +74,14 @@ export default function CategoriesPage() {
                 <div className="flex justify-between">
                   <div>
                     <h3 className="text-xl font-bold">{cat.name}</h3>
-                    <p className="mt-2 text-gray-600">{cat.description}</p>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-gray-600 dark:text-gray-300">{cat.description}</p>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                       {cat.transaction_ids.length} transações
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-3xl font-bold text-danger-600">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(cat.total_amount)}
+                      {formatCurrency(cat.total_amount)}
                     </p>
                   </div>
                 </div>
