@@ -1,6 +1,7 @@
 'use client';
 
 import { useCategories } from '@/lib/db/hooks';
+import { getAllTransactions, getAllMerchants, addCategory } from '@/lib/db/operations';
 import { Card } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils/formatting';
 import { useState } from 'react';
@@ -26,13 +27,48 @@ export default function CategoriesPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/categorize', { method: 'POST' });
+      console.log('[Client] Fetching transactions and merchants from IndexedDB...');
+
+      // Fetch data from IndexedDB (client-side only)
+      const transactions = await getAllTransactions();
+      const merchants = await getAllMerchants();
+
+      console.log(`[Client] Found ${transactions.length} transactions and ${merchants.length} merchants`);
+
+      if (!transactions || transactions.length === 0) {
+        throw new Error('No transactions found. Please upload data first.');
+      }
+
+      console.log('[Client] Calling /api/categorize...');
+
+      // Send data to server for AI processing
+      const response = await fetch('/api/categorize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactions, merchants }),
+      });
+
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Categorization failed');
       }
+
+      console.log(`[Client] Received ${data.categories.length} categories from API`);
+
+      // Save categories to IndexedDB
+      for (const cat of data.categories) {
+        await addCategory({
+          name: cat.name,
+          description: cat.description,
+          transaction_ids: cat.transaction_ids,
+          total_amount: cat.total_amount,
+        });
+      }
+
+      console.log('[Client] Categories saved to IndexedDB');
     } catch (err) {
+      console.error('[Client] Categorization error:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);

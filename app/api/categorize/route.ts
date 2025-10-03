@@ -1,27 +1,26 @@
 import { NextResponse } from 'next/server';
-import {
-  getAllTransactions,
-  getAllMerchants,
-  addCategory,
-} from '@/lib/db/operations';
 import { categorizeTransactions } from '@/lib/ai/categorization';
+import type { Transaction } from '@/types/transaction';
+import type { Merchant } from '@/types/merchant';
 
 /**
  * POST /api/categorize
  *
  * Generates contextual categories for all transactions using AI analysis.
  * This endpoint:
- * 1. Fetches all transactions and merchants from IndexedDB
+ * 1. Receives transactions and merchants data from client (IndexedDB is client-side only)
  * 2. Sends data to Claude API for intelligent categorization
- * 3. Saves suggested categories back to the database
- * 4. Returns the generated categories to the client
+ * 3. Returns suggested categories to client for saving
  *
+ * @param request - Request body must contain { transactions, merchants }
  * @returns JSON response with success status and categories array
  */
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const transactions = await getAllTransactions();
-    const merchants = await getAllMerchants();
+    const { transactions, merchants } = await request.json() as {
+      transactions: Transaction[];
+      merchants: Merchant[];
+    };
 
     if (!transactions || transactions.length === 0) {
       return NextResponse.json(
@@ -30,17 +29,11 @@ export async function POST() {
       );
     }
 
+    console.log(`[API] Categorizing ${transactions.length} transactions with ${merchants.length} merchants`);
+
     const suggestions = await categorizeTransactions(transactions, merchants);
 
-    // Save categories to database
-    for (const cat of suggestions) {
-      await addCategory({
-        name: cat.name,
-        description: cat.description,
-        transaction_ids: cat.transaction_ids,
-        total_amount: cat.total_amount,
-      });
-    }
+    console.log(`[API] Generated ${suggestions.length} category suggestions`);
 
     return NextResponse.json({ success: true, categories: suggestions });
   } catch (error) {
