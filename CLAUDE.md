@@ -320,4 +320,136 @@ Check:
 
 ---
 
+## ⚠️ CRITICAL: Design System Guidelines
+
+**NEVER hardcode colors or create manual components. ALWAYS use the design system.**
+
+### ❌ FORBIDDEN - Hardcoded Colors
+
+```tsx
+// ❌ WRONG - Hardcoded gray colors
+<div className="bg-gray-50 dark:bg-gray-900">
+<p className="text-gray-600 dark:text-gray-400">
+<div className="border-gray-300">
+
+// ❌ WRONG - Hardcoded blue/red/green
+<div className="bg-blue-50 border-blue-200">
+<button className="bg-blue-600 hover:bg-blue-700">
+<p className="text-red-600">
+```
+
+### ✅ REQUIRED - Design System Tokens
+
+```tsx
+// ✅ CORRECT - Use theme tokens
+<div className="bg-background">           // Background color
+<div className="bg-card">                 // Card background
+<p className="text-foreground">          // Primary text
+<p className="text-muted-foreground">    // Secondary text
+<div className="border-border">          // Borders
+<div className="bg-muted">               // Muted background
+<div className="bg-primary">             // Primary color
+```
+
+### ❌ FORBIDDEN - Manual Components
+
+```tsx
+// ❌ WRONG - Manual card with hardcoded styles
+<div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+  <h3 className="text-lg font-semibold">Title</h3>
+</div>
+
+// ❌ WRONG - Manual button
+<button className="px-4 py-2 bg-blue-600 text-white rounded">
+  Click me
+</button>
+
+// ❌ WRONG - Manual input
+<input className="w-full px-4 py-2 border border-gray-300 rounded" />
+```
+
+### ✅ REQUIRED - shadcn/ui Components
+
+```tsx
+// ✅ CORRECT - Use Card component
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+
+<Card>
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Content here
+  </CardContent>
+</Card>
+
+// ✅ CORRECT - Use Button component
+import { Button } from '@/components/ui/button';
+
+<Button variant="default">Click me</Button>
+<Button variant="destructive">Delete</Button>
+<Button variant="outline">Cancel</Button>
+
+// ✅ CORRECT - Use Input component
+import { Input } from '@/components/ui/input';
+
+<Input type="text" placeholder="Enter text" />
+```
+
+### Color Tokens Reference
+
+| Purpose | Class | Usage |
+|---------|-------|-------|
+| **Backgrounds** | `bg-background` | Page background |
+| | `bg-card` | Card/container background |
+| | `bg-muted` | Subtle background (highlights, etc) |
+| | `bg-primary` | Primary color (buttons, accents) |
+| **Text** | `text-foreground` | Primary text color |
+| | `text-muted-foreground` | Secondary/description text |
+| | `text-primary` | Primary accent text |
+| **Borders** | `border-border` | Default borders |
+| | `border-input` | Input borders |
+| **Semantic Colors** | `text-red-600 dark:text-red-400` | Expenses/errors (only for data) |
+| | `text-green-600 dark:text-green-400` | Income/success (only for data) |
+
+### Component Imports
+
+Always import from `@/components/ui/`:
+
+```tsx
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+```
+
+### Icon Library
+
+Use Lucide React for icons:
+
+```tsx
+import { Upload, Check, X, Pencil, Trash2, Download } from 'lucide-react';
+
+<Button>
+  <Upload className="w-4 h-4 mr-2" />
+  Upload File
+</Button>
+```
+
+### CRITICAL: Pre-Implementation Checklist
+
+Before writing ANY new page or component:
+
+- [ ] Will I use `bg-background` for page background?
+- [ ] Will I use `<Card>` instead of manual divs?
+- [ ] Will I use `<Button>` instead of `<button>`?
+- [ ] Will I use `text-foreground` and `text-muted-foreground` for text?
+- [ ] Will I avoid ANY `gray-*`, `blue-*` color classes (except semantic red/green for data)?
+- [ ] Will I import icons from `lucide-react`?
+
+**If you answered NO to any question, STOP and revise your approach.**
+
+---
+
 For project architecture and philosophy, see [/fInAnce/CLAUDE.md](../CLAUDE.md).
