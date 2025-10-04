@@ -109,13 +109,13 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-foreground">
             Upload de Extrato
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Envie seu extrato bancário ou fatura de cartão em PDF
           </p>
         </div>
@@ -137,25 +137,25 @@ export default function UploadPage() {
           )}
 
           {status === 'success' && result && (
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-900 mb-4">
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h3 className="font-semibold text-foreground mb-4">
                 ✅ Transações Salvas no Banco de Dados
               </h3>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {result.transactions.slice(0, DISPLAY_TRANSACTION_LIMIT).map((t, i) => (
                   <div
                     key={i}
-                    className="flex justify-between items-center p-3 bg-gray-50 rounded"
+                    className="flex justify-between items-center p-3 bg-muted rounded"
                   >
                     <div>
-                      <p className="font-medium text-sm">{t.description}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="font-medium text-sm text-foreground">{t.description}</p>
+                      <p className="text-xs text-muted-foreground">
                         {t.date.toLocaleDateString('pt-BR')}
                       </p>
                     </div>
                     <span
                       className={`font-semibold ${
-                        t.amount < 0 ? 'text-danger-600' : 'text-success-600'
+                        t.amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                       }`}
                     >
                       {new Intl.NumberFormat('pt-BR', {
@@ -167,7 +167,7 @@ export default function UploadPage() {
                 ))}
               </div>
               {result.transactions.length > DISPLAY_TRANSACTION_LIMIT && (
-                <p className="text-sm text-gray-500 mt-4 text-center">
+                <p className="text-sm text-muted-foreground mt-4 text-center">
                   + {result.transactions.length - DISPLAY_TRANSACTION_LIMIT} transações
                 </p>
               )}
