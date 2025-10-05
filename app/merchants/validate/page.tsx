@@ -17,7 +17,7 @@ import {
   addDiscoveryLearning
 } from '@/lib/db/operations';
 import { createPatternSignature, createContextSummary } from '@/types/discovery';
-import { formatCurrency } from '@/lib/utils/formatting';
+import { formatCurrency, formatDate } from '@/lib/utils/formatting';
 import { TransactionContext } from '@/lib/analysis/context-analyzer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -282,7 +282,7 @@ export default function MerchantValidationPage() {
             <div>
               <div className="text-sm text-muted-foreground">Período</div>
               <div className="text-sm text-foreground">
-                {new Date(context.date_range.first).toLocaleDateString('pt-BR')} até {new Date(context.date_range.last).toLocaleDateString('pt-BR')}
+                {formatDate(new Date(context.date_range.first))} até {formatDate(new Date(context.date_range.last))}
               </div>
             </div>
           </div>
