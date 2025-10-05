@@ -37,8 +37,11 @@ export default function Home() {
   const handleGenerateInsights = async () => {
     if (!merchants) return;
     setGeneratingInsights(true);
-    await generateInsights(merchants, period);
-    setGeneratingInsights(false);
+    try {
+      await generateInsights(merchants, period);
+    } finally {
+      setGeneratingInsights(false);
+    }
   };
 
   // Loading state
@@ -94,13 +97,13 @@ export default function Home() {
             </Card>
             <Card className="p-6">
               <p className="text-sm text-muted-foreground">Despesas</p>
-              <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-2">
+              <p className="text-3xl font-bold text-danger-600 mt-2">
                 {formatCurrency(stats.expenses)}
               </p>
             </Card>
             <Card className="p-6">
               <p className="text-sm text-muted-foreground">Receitas</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
+              <p className="text-3xl font-bold text-success-600 mt-2">
                 {formatCurrency(stats.income)}
               </p>
             </Card>

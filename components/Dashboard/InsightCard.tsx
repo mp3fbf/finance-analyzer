@@ -2,6 +2,7 @@
 
 import { Insight } from '@/types/insight';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface InsightCardProps {
   insight: Insight;
@@ -32,9 +33,16 @@ export function InsightCard({ insight, onClick }: InsightCardProps) {
         <div className="flex-1">
           <h3 className="font-bold text-lg text-foreground">{insight.title}</h3>
           <p className="text-muted-foreground mt-2 text-sm">{insight.description}</p>
-          <button className="mt-4 text-primary text-sm font-medium hover:underline">
+          <Button
+            variant="link"
+            className="mt-4 px-0 h-auto text-sm font-medium"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick?.();
+            }}
+          >
             Explorar no chat →
-          </button>
+          </Button>
         </div>
       </div>
     </Card>
