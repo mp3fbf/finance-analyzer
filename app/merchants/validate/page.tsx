@@ -17,8 +17,13 @@ import {
   addDiscoveryLearning
 } from '@/lib/db/operations';
 import { createPatternSignature, createContextSummary } from '@/types/discovery';
-import { formatCurrency } from '@/lib/utils/formatting';
+import { formatCurrency, formatDate } from '@/lib/utils/formatting';
 import { TransactionContext } from '@/lib/analysis/context-analyzer';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Check, Pencil, X } from 'lucide-react';
 
 /**
  * Helper function to build context features for discovery learning
@@ -161,10 +166,10 @@ export default function MerchantValidationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-xl font-semibold mb-2 dark:text-gray-100">Carregando descobertas...</div>
-          <div className="text-gray-600 dark:text-gray-400">Analisando estabelecimentos</div>
+          <div className="text-xl font-semibold mb-2 text-foreground">Carregando descobertas...</div>
+          <div className="text-muted-foreground">Analisando estabelecimentos</div>
         </div>
       </div>
     );
@@ -172,10 +177,10 @@ export default function MerchantValidationPage() {
 
   if (discoveries.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-2xl font-semibold mb-2 dark:text-gray-100">✅ Tudo validado!</div>
-          <div className="text-gray-600 dark:text-gray-400">Não há estabelecimentos pendentes de validação</div>
+          <div className="text-2xl font-semibold mb-2 text-foreground">✅ Tudo validado!</div>
+          <div className="text-muted-foreground">Não há estabelecimentos pendentes de validação</div>
         </div>
       </div>
     );
@@ -184,10 +189,10 @@ export default function MerchantValidationPage() {
   const discovery = discoveries[currentIndex];
   if (!discovery) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="text-xl font-semibold mb-2 dark:text-gray-100">Erro ao carregar descoberta</div>
-          <div className="text-gray-600 dark:text-gray-400">Descoberta não encontrada</div>
+          <div className="text-xl font-semibold mb-2 text-foreground">Erro ao carregar descoberta</div>
+          <div className="text-muted-foreground">Descoberta não encontrada</div>
         </div>
       </div>
     );
@@ -196,113 +201,120 @@ export default function MerchantValidationPage() {
   const context = discovery.context_snapshot;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2 dark:text-gray-100">🔍 Validação de Estabelecimentos</h1>
-          <div className="text-gray-600 dark:text-gray-400">
+          <h1 className="text-3xl font-bold mb-2 text-foreground">🔍 Validação de Estabelecimentos</h1>
+          <div className="text-muted-foreground">
             {currentIndex + 1} de {discoveries.length} pendentes
           </div>
-          <div className="mt-2 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div className="mt-2 bg-muted rounded-full h-2">
             <div
-              className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all"
+              className="bg-primary h-2 rounded-full transition-all"
               style={{ width: `${((currentIndex + 1) / discoveries.length) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Discovery Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-          {/* Code */}
-          <div className="mb-6">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Código da transação:</div>
-            <div className="font-mono text-lg font-bold dark:text-gray-100">{discovery.raw_code}</div>
-            {context.raw_variations.length > 1 && (
-              <details className="mt-2">
-                <summary className="text-sm text-gray-600 cursor-pointer">
-                  {context.raw_variations.length} variações detectadas
-                </summary>
-                <ul className="mt-2 text-sm font-mono text-gray-700 dark:text-gray-300">
-                  {context.raw_variations.slice(0, 5).map((v, i) => (
-                    <li key={i}>• {v}</li>
-                  ))}
-                  {context.raw_variations.length > 5 && (
-                    <li className="text-gray-500">... e mais {context.raw_variations.length - 5}</li>
-                  )}
-                </ul>
-              </details>
-            )}
-          </div>
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            {/* Code */}
+            <div className="mb-6">
+              <div className="text-sm text-muted-foreground mb-1">Código da transação:</div>
+              <div className="font-mono text-lg font-bold text-foreground">{discovery.raw_code}</div>
+              {context.raw_variations.length > 1 && (
+                <details className="mt-2">
+                  <summary className="text-sm text-muted-foreground cursor-pointer hover:text-foreground">
+                    {context.raw_variations.length} variações detectadas
+                  </summary>
+                  <ul className="mt-2 text-sm font-mono text-muted-foreground">
+                    {context.raw_variations.slice(0, 5).map((v, i) => (
+                      <li key={i}>• {v}</li>
+                    ))}
+                    {context.raw_variations.length > 5 && (
+                      <li className="text-muted-foreground/60">... e mais {context.raw_variations.length - 5}</li>
+                    )}
+                  </ul>
+                </details>
+              )}
+            </div>
 
-          {/* AI Inference */}
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-sm text-blue-800 font-semibold">IA inferiu:</div>
-              <div className="text-sm text-blue-700 dark:text-blue-300">
-                Confiança: {Math.round(discovery.ai_confidence * 100)}%
+            {/* AI Inference */}
+            <div className="mb-6 p-4 border-l-4 border-primary bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-semibold text-foreground">IA inferiu:</div>
+                <Badge variant="outline">
+                  Confiança: {Math.round(discovery.ai_confidence * 100)}%
+                </Badge>
+              </div>
+              <div className="text-xl font-bold text-foreground mb-2">
+                {discovery.ai_final_inference}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {discovery.ai_reasoning_summary}
               </div>
             </div>
-            <div className="text-xl font-bold text-blue-900 mb-2">
-              {discovery.ai_final_inference}
-            </div>
-            <div className="text-sm text-blue-800 dark:text-blue-300">
-              {discovery.ai_reasoning_summary}
-            </div>
-          </div>
 
           {/* Context Info */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Ocorrências</div>
-              <div className="text-lg font-semibold">{context.occurrence_count} transações</div>
+              <div className="text-sm text-muted-foreground">Ocorrências</div>
+              <div className="text-lg font-semibold text-foreground">{context.occurrence_count} transações</div>
             </div>
             <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Valor Total</div>
-              <div className="text-lg font-semibold">
+              <div className="text-sm text-muted-foreground">Valor Total</div>
+              <div className="text-lg font-semibold text-foreground">
                 {formatCurrency(context.total_amount)}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Faixa de valores</div>
-              <div className="text-sm">
+              <div className="text-sm text-muted-foreground">Faixa de valores</div>
+              <div className="text-sm text-foreground">
                 {formatCurrency(context.amount_stats.min)} - {formatCurrency(context.amount_stats.max)}
               </div>
             </div>
             <div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Padrão temporal</div>
-              <div className="text-sm">{context.temporal_pattern.pattern_description}</div>
+              <div className="text-sm text-muted-foreground">Padrão temporal</div>
+              <div className="text-sm text-foreground">{context.temporal_pattern.pattern_description}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Período</div>
+              <div className="text-sm text-foreground">
+                {formatDate(new Date(context.date_range.first))} até {formatDate(new Date(context.date_range.last))}
+              </div>
             </div>
           </div>
 
           {/* Reasoning Details */}
           <details className="mb-6">
-            <summary className="text-sm text-gray-700 cursor-pointer font-semibold">
+            <summary className="text-sm cursor-pointer font-semibold text-foreground hover:text-primary">
               Ver raciocínio completo da IA
             </summary>
             <div className="mt-4 space-y-3 text-sm">
               <div>
-                <div className="font-semibold text-gray-700 dark:text-gray-300">Análise estrutural:</div>
-                <div className="text-gray-600 dark:text-gray-400">{discovery.ai_reasoning.structural_analysis}</div>
+                <div className="font-semibold text-foreground">Análise estrutural:</div>
+                <div className="text-muted-foreground">{discovery.ai_reasoning.structural_analysis}</div>
               </div>
               <div>
-                <div className="font-semibold text-gray-700 dark:text-gray-300">Análise de valores:</div>
-                <div className="text-gray-600 dark:text-gray-400">{discovery.ai_reasoning.value_analysis}</div>
+                <div className="font-semibold text-foreground">Análise de valores:</div>
+                <div className="text-muted-foreground">{discovery.ai_reasoning.value_analysis}</div>
               </div>
               <div>
-                <div className="font-semibold text-gray-700 dark:text-gray-300">Análise temporal:</div>
-                <div className="text-gray-600 dark:text-gray-400">{discovery.ai_reasoning.temporal_analysis}</div>
+                <div className="font-semibold text-foreground">Análise temporal:</div>
+                <div className="text-muted-foreground">{discovery.ai_reasoning.temporal_analysis}</div>
               </div>
               {discovery.ai_reasoning.hypotheses.length > 0 && (
                 <div>
-                  <div className="font-semibold text-gray-700 dark:text-gray-300">Hipóteses consideradas:</div>
+                  <div className="font-semibold text-foreground">Hipóteses consideradas:</div>
                   <ul className="mt-2 space-y-2">
                     {discovery.ai_reasoning.hypotheses.map((h, i) => (
-                      <li key={i} className="border-l-2 border-gray-300 pl-3">
-                        <div className="font-medium">{h.name} ({Math.round(h.confidence * 100)}%)</div>
-                        <div className="text-xs text-green-700">✓ {h.evidence_for.join(', ')}</div>
+                      <li key={i} className="border-l-2 border-border pl-3">
+                        <div className="font-medium text-foreground">{h.name} ({Math.round(h.confidence * 100)}%)</div>
+                        <div className="text-xs text-green-600 dark:text-green-400">✓ {h.evidence_for.join(', ')}</div>
                         {h.evidence_against.length > 0 && (
-                          <div className="text-xs text-red-700">✗ {h.evidence_against.join(', ')}</div>
+                          <div className="text-xs text-red-600 dark:text-red-400">✗ {h.evidence_against.join(', ')}</div>
                         )}
                       </li>
                     ))}
@@ -316,25 +328,24 @@ export default function MerchantValidationPage() {
           {editMode && (
             <div className="mb-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-semibold text-foreground mb-1">
                   Nome correto do estabelecimento:
                 </label>
-                <input
+                <Input
                   type="text"
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Digite o nome correto"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-semibold text-foreground mb-1">
                   Notas (opcional):
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
                   placeholder="Ex: É uma padaria local, não é uma rede"
                   rows={3}
                 />
@@ -346,56 +357,71 @@ export default function MerchantValidationPage() {
           <div className="flex gap-3">
             {!editMode ? (
               <>
-                <button
+                <Button
                   onClick={handleConfirm}
-                  className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  size="lg"
                 >
-                  ✓ Confirmar
-                </button>
-                <button
+                  <Check className="w-4 h-4 mr-2" />
+                  Confirmar
+                </Button>
+                <Button
                   onClick={() => setEditMode(true)}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+                  variant="default"
+                  className="flex-1"
+                  size="lg"
                 >
-                  ✏️ Corrigir
-                </button>
-                <button
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Corrigir
+                </Button>
+                <Button
                   onClick={() => {
                     setEditMode(true);
                     setNotes('');
                   }}
-                  className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-semibold hover:bg-gray-700 transition"
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
                 >
-                  ❌ Rejeitar
-                </button>
+                  <X className="w-4 h-4 mr-2" />
+                  Rejeitar
+                </Button>
               </>
             ) : (
               <>
-                <button
+                <Button
                   onClick={() => setEditMode(false)}
-                  className="flex-1 bg-gray-400 text-white py-3 rounded-lg font-semibold hover:bg-gray-500 transition"
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleCorrect}
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
+                  variant="default"
+                  className="flex-1"
+                  size="lg"
                   disabled={!editedName.trim()}
                 >
                   Salvar Correção
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleReject}
-                  className="flex-1 bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition"
+                  variant="destructive"
+                  className="flex-1"
+                  size="lg"
                 >
                   Confirmar Rejeição
-                </button>
+                </Button>
               </>
             )}
           </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Impact Score Info */}
-        <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-center text-sm text-muted-foreground">
           Impacto financeiro: {formatCurrency(discovery.impact_score)}
           <span className="ml-2">(prioridade por valor total × frequência)</span>
         </div>
