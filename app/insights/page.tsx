@@ -1,18 +1,22 @@
 'use client';
 
-import { useInsights } from '@/lib/db/hooks';
+import { useInsights, useMerchants } from '@/lib/db/hooks';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { format } from 'date-fns';
+import { generateInsights } from '@/lib/analysis/insights';
 
 export default function InsightsPage() {
   const period = format(new Date(), 'yyyy-MM');
   const insights = useInsights(period);
+  const merchants = useMerchants();
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
+    if (!merchants) return;
     setLoading(true);
-    await fetch('/api/generate-insights', { method: 'POST' });
+    await generateInsights(merchants, period);
     setLoading(false);
   };
 
@@ -21,13 +25,12 @@ export default function InsightsPage() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Insights</h1>
-          <button
+          <Button
             onClick={handleGenerate}
             disabled={loading}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50"
           >
             {loading ? 'Gerando...' : 'Gerar Insights'}
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-6">

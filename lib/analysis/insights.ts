@@ -1,6 +1,7 @@
 import { Merchant } from '@/types/merchant';
 import { Insight } from '@/types/insight';
 import { addInsight } from '@/lib/db/operations';
+import { formatCurrency } from '@/lib/utils/formatting';
 
 export async function generateInsights(
   merchants: Merchant[],
@@ -16,7 +17,7 @@ export async function generateInsights(
   insights.push({
     type: 'top_spending',
     title: 'Maiores Ralos do Mês',
-    description: `${topMerchants[0]?.name} lidera com R$ ${topMerchants[0]?.total_spent.toFixed(2)}`,
+    description: `${topMerchants[0]?.name} lidera com ${formatCurrency(topMerchants[0]?.total_spent ?? 0)}`,
     priority: 10,
     period,
     data: {
@@ -39,7 +40,7 @@ export async function generateInsights(
     insights.push({
       type: 'subscriptions',
       title: 'Suas Assinaturas',
-      description: `${subscriptions.length} serviços ativos custam R$ ${total.toFixed(2)}/mês`,
+      description: `${subscriptions.length} serviços ativos custam ${formatCurrency(total)}/mês`,
       priority: 8,
       period,
       data: {
@@ -66,7 +67,7 @@ export async function generateInsights(
       insights.push({
         type: 'alert',
         title: 'Delivery em Alta',
-        description: `R$ ${total.toFixed(2)} em ${count} pedidos este mês`,
+        description: `${formatCurrency(total)} em ${count} pedidos este mês`,
         priority: 9,
         period,
         data: { total, count, merchants: delivery },
