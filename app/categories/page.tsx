@@ -147,7 +147,9 @@ export default function CategoriesPage() {
                             {formatCurrency(cat.total_amount)}
                           </div>
                           <div className="text-sm text-muted-foreground mt-1">
-                            {formatCurrency(cat.total_amount / cat.transaction_ids.length)}/transação
+                            {cat.transaction_ids.length > 0
+                              ? `${formatCurrency(cat.total_amount / cat.transaction_ids.length)}/transação`
+                              : 'N/A'}
                           </div>
                         </div>
                       </div>
