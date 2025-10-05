@@ -33,7 +33,7 @@ export function DashboardLayout({
               <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
                 Início
               </Link>
-              <Link href="/debug" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/transactions" className="text-muted-foreground hover:text-foreground transition-colors">
                 Transações
               </Link>
               <Link href="/merchants" className="text-muted-foreground hover:text-foreground transition-colors">

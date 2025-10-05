@@ -26,7 +26,14 @@ export function InsightCard({ insight, onClick }: InsightCardProps) {
   return (
     <Card
       onClick={onClick}
-      className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      className="p-6 hover:shadow-lg transition-shadow cursor-pointer focus:ring-2 focus:ring-primary focus:outline-none"
     >
       <div className="flex items-start gap-4">
         <div className="text-4xl">{ICONS[insight.type] || '📌'}</div>
