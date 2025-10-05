@@ -179,6 +179,10 @@ export async function deleteCategory(id: string): Promise<void> {
   await db.categories.delete(id);
 }
 
+export async function clearAllCategories(): Promise<void> {
+  await db.categories.clear();
+}
+
 // ==================== INSIGHTS ====================
 
 export async function addInsight(

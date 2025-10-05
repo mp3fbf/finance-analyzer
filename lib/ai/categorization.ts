@@ -132,12 +132,31 @@ Retorne APENAS um objeto JSON válido (sem markdown, sem explicações):
   const result: CategorySuggestion[] = [];
 
   for (const cat of parsed.categories) {
+    // Validation: Non-empty name
     if (typeof cat.name !== 'string' || !cat.name.trim()) {
       console.warn('Skipping invalid category: missing name');
       continue;
     }
-    if (!Array.isArray(cat.merchant_names)) {
-      console.warn(`Skipping category "${cat.name}": missing merchant_names`);
+
+    // Validation: No generic category names
+    const genericCategories = [
+      'alimentação', 'transporte', 'entretenimento', 'saúde',
+      'educação', 'compras', 'lazer', 'outros', 'diversos'
+    ];
+    if (genericCategories.some(generic => cat.name.toLowerCase().includes(generic))) {
+      console.warn(`Skipping generic category "${cat.name}" - violates contextual grouping rule`);
+      continue;
+    }
+
+    // Validation: Merchant names array exists
+    if (!Array.isArray(cat.merchant_names) || cat.merchant_names.length === 0) {
+      console.warn(`Skipping category "${cat.name}": missing or empty merchant_names`);
+      continue;
+    }
+
+    // Validation: Total amount is a finite number
+    if (typeof cat.estimated_total === 'number' && !isFinite(cat.estimated_total)) {
+      console.warn(`Skipping category "${cat.name}": invalid estimated_total`);
       continue;
     }
 
@@ -146,17 +165,31 @@ Retorne APENAS um objeto JSON válido (sem markdown, sem explicações):
     let total_amount = 0;
 
     for (const merchantName of cat.merchant_names) {
-      const merchant = merchants.find(m =>
-        m.name.toLowerCase() === merchantName.toLowerCase() ||
-        m.name.toLowerCase().includes(merchantName.toLowerCase()) ||
-        merchantName.toLowerCase().includes(m.name.toLowerCase())
-      );
+      // Normalize names for matching
+      const normalizedSearchName = merchantName.toLowerCase().trim();
+
+      // Find merchant with strict word boundary matching
+      const merchant = merchants.find(m => {
+        const normalizedMerchantName = m.name.toLowerCase().trim();
+
+        // Exact match (best case)
+        if (normalizedMerchantName === normalizedSearchName) {
+          return true;
+        }
+
+        // Word boundary match (prevents partial word matches)
+        // e.g., "Uber" matches "Uber Eats" but not "Uberaba Store"
+        const wordBoundaryPattern = new RegExp(`\\b${normalizedSearchName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+        return wordBoundaryPattern.test(normalizedMerchantName);
+      });
 
       if (merchant) {
         // Find all transactions for this merchant
         const txs = transactions.filter(t => t.merchant_id === merchant.id);
         transaction_ids.push(...txs.map(t => t.id));
         total_amount += txs.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      } else {
+        console.warn(`Could not match merchant name "${merchantName}" to any existing merchant`);
       }
     }
 
