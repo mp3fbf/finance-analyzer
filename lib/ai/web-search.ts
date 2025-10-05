@@ -67,7 +67,14 @@ async function processQueue() {
       const result = await performSearch(request.query, request.maxResults);
       request.resolve(result);
     } catch (error) {
-      request.reject(error as Error);
+      // Return fallback response instead of rejecting
+      // This makes merchant inference resilient to web search outages
+      console.error(`Web search error for "${request.query}":`, error);
+      request.resolve({
+        query: request.query,
+        results: [],
+        summary: `Erro na busca: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
     }
   }
 

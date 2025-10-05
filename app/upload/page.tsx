@@ -8,6 +8,7 @@ import { ExtractionResult } from '@/types/transaction';
 import { useRouter } from 'next/navigation';
 import { addTransactions } from '@/lib/db/operations';
 import { processMerchantsForAllTransactions } from '@/lib/analysis/process-merchants';
+import { formatCurrency, formatDate } from '@/lib/utils/formatting';
 
 type Status = 'idle' | 'processing' | 'success' | 'error';
 
@@ -150,7 +151,7 @@ export default function UploadPage() {
                     <div>
                       <p className="font-medium text-sm text-foreground">{t.description}</p>
                       <p className="text-xs text-muted-foreground">
-                        {t.date.toLocaleDateString('pt-BR')}
+                        {formatDate(t.date)}
                       </p>
                     </div>
                     <span
@@ -158,10 +159,7 @@ export default function UploadPage() {
                         t.amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                       }`}
                     >
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(t.amount)}
+                      {formatCurrency(t.amount)}
                     </span>
                   </div>
                 ))}

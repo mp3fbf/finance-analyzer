@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Trash2, RefreshCw } from 'lucide-react';
+import { formatCurrency, formatDate } from '@/lib/utils/formatting';
 
 export default function DebugPage() {
   const transactions = useTransactions();
@@ -125,7 +126,7 @@ export default function DebugPage() {
             <Trash2 className="w-4 h-4 mr-2" />
             Limpar Todos os Dados
           </Button>
-          <Button onClick={handleResetDatabase} className="bg-orange-600 hover:bg-orange-700 text-white">
+          <Button onClick={handleResetDatabase} variant="secondary">
             <RefreshCw className="w-4 h-4 mr-2" />
             Reset Database (Fix Schema)
           </Button>
@@ -145,7 +146,7 @@ export default function DebugPage() {
                   <div className="flex-1">
                     <p className="font-medium text-foreground">{t.description}</p>
                     <p className="text-xs text-muted-foreground">
-                      {t.date?.toLocaleDateString('pt-BR') || 'Data inválida'} • {t.type}
+                      {t.date ? formatDate(t.date) : 'Data inválida'} • {t.type}
                     </p>
                   </div>
                   <span
@@ -153,10 +154,7 @@ export default function DebugPage() {
                       t.amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                     }`}
                   >
-                    {new Intl.NumberFormat('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }).format(t.amount)}
+                    {formatCurrency(t.amount)}
                   </span>
                 </div>
               ))}
