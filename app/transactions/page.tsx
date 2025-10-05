@@ -11,24 +11,21 @@ import { Loader2 } from 'lucide-react';
 export default function TransactionsPage() {
   const transactions = useTransactions();
 
-  // Loading state
-  if (!transactions) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Carregando transações...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <DashboardLayout>
-      <div>
-        <h2 className="text-2xl font-bold mb-6">Todas as Transações</h2>
-        <TransactionList transactions={transactions} />
-      </div>
+      {!transactions ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Carregando transações...</p>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <h2 className="text-2xl font-bold mb-6">Todas as Transações</h2>
+          <TransactionList transactions={transactions} />
+        </div>
+      )}
     </DashboardLayout>
   );
 }
