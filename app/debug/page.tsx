@@ -4,7 +4,7 @@ import { useTransactions, useMerchants, useCategories } from '@/lib/db/hooks';
 import { clearAllData, exportData } from '@/lib/db/operations';
 import { db } from '@/lib/db/schema';
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Trash2, RefreshCw } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils/formatting';

@@ -19,7 +19,7 @@ import {
 import { createPatternSignature, createContextSummary } from '@/types/discovery';
 import { formatCurrency, formatDate } from '@/lib/utils/formatting';
 import { TransactionContext } from '@/lib/analysis/context-analyzer';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
