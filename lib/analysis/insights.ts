@@ -3,6 +3,18 @@ import { Insight } from '@/types/insight';
 import { addInsight } from '@/lib/db/operations';
 import { formatCurrency } from '@/lib/utils/formatting';
 
+/**
+ * Generates and persists financial insights from merchant data.
+ *
+ * Creates three types of insights:
+ * - Top Spending: Top 5 merchants by total amount spent
+ * - Subscriptions: Aggregated recurring service costs
+ * - Delivery Alert: High-value delivery spending warning (>R$500)
+ *
+ * @param merchants - Array of merchant data to analyze
+ * @param period - Period identifier (e.g., "2024-09")
+ * @throws {Error} If database operations fail
+ */
 export async function generateInsights(
   merchants: Merchant[],
   period: string
@@ -10,7 +22,7 @@ export async function generateInsights(
   const insights: Omit<Insight, 'id' | 'created_at'>[] = [];
 
   // 1. TOP SPENDING - Maiores ralos
-  const topMerchants = merchants
+  const topMerchants = [...merchants]
     .sort((a, b) => b.total_spent - a.total_spent)
     .slice(0, 5);
 
